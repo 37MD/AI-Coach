@@ -9,7 +9,8 @@
     <meta name="theme-color" content="#F1E0C5">
     <meta name="description" content="AI-powered interview prep, feedback, and job hunt strategy app.">
     <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icon-192.png">
+    <!-- Updated Apple Touch Icon using Inline SVG -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='2' y='7' width='20' height='14' rx='2' ry='2'></rect><path d='M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16'></path><path d='M8 11h8'></path><path d='M8 15h8'></path></svg>">
     
     <!-- Tailwind CSS for mobile-first styling -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -93,7 +94,7 @@
         </div>
     </section>
 
-    <!-- Job Hunt Strategy Tab -->
+    <!-- Job Hunt Strategy Tab (Optimized for LinkedIn & Naukri.com) -->
     <section id="hunt" class="tab-content bg-gray-100 p-6 rounded shadow border border-black">
         <h2 class="text-2xl font-bold mb-4">LinkedIn & Naukri Job Hunt Strategy</h2>
         <p class="mb-4 text-sm font-bold">Paste your resume and target location. The AI will analyze your profile and construct specialized keywords, search queries, and optimization strategies specifically engineered for LinkedIn and Naukri.com.</p>
@@ -255,8 +256,9 @@
                 return;
             }
             
+            // Permanent local storage 
             localStorage.setItem('gemini_api_keys', JSON.stringify(keysArray));
-            localStorage.setItem('gemini_key_rotation_index', '0');
+            localStorage.setItem('gemini_key_rotation_index', '0'); // Reset rotation pointer
             alert("Keys saved permanently in local storage! Auto-rotation enabled.");
         }
 
@@ -267,19 +269,28 @@
             let currentIndex = parseInt(localStorage.getItem('gemini_key_rotation_index') || '0', 10);
             const currentKey = keys[currentIndex];
             
+            // Rotate index for the next call
             let nextIndex = (currentIndex + 1) % keys.length;
             localStorage.setItem('gemini_key_rotation_index', nextIndex.toString());
             
             return currentKey;
         }
 
+        // Semantically correct Tab Switch Engine
         function switchTab(tabId) {
+            // Hide all tab content panes
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            
+            // Reset styles on all tab buttons to default inactive state
             document.querySelectorAll('.tab-btn').forEach(el => {
                 el.classList.remove('bg-gray-100', 'border-b-transparent', 'border-black');
                 el.classList.add('bg-gray-300', 'border-b-black', 'border-transparent');
             });
+            
+            // Display targeted tab content pane
             document.getElementById(tabId).classList.add('active');
+            
+            // Elevate targeted tab button to active look
             const targetBtn = document.getElementById(`btn-${tabId}`);
             if (targetBtn) {
                 targetBtn.classList.remove('bg-gray-300', 'border-b-black', 'border-transparent');
@@ -301,9 +312,11 @@
                 generationConfig: { temperature: 0.3 }
             };
 
+            // Model Cascade Engine
             for (let m = 0; m < MODEL_CASCADE.length; m++) {
                 const modelName = MODEL_CASCADE[m];
                 
+                // Key Retry Logic
                 for (let k = 0; k < keys.length; k++) {
                     const apiKey = getRotatedKey(); 
                     const endpoint = `${API_BASE_URL}${modelName}:generateContent?key=${apiKey}`;
@@ -333,11 +346,12 @@
                     }
                 }
             }
+
             alert("Critical Error: All models in the cascade failed, or all keys exhausted their quotas. Please check your network and API usage limits.");
             return null;
         }
 
-        // --- Job Hunt Strategy Feature ---
+        // --- Job Hunt Strategy Feature (Optimized for LinkedIn & Naukri.com) ---
         async function generateJobHuntStrategy() {
             const resume = document.getElementById('huntResume').value;
             const location = document.getElementById('huntLocation').value;
@@ -361,7 +375,7 @@
             document.getElementById('huntLoading').classList.remove('active');
         }
 
-        // --- Interview Preparation Feature ---
+        // --- 3. Interview Preparation Feature ---
         async function generatePrep() {
             const resume = document.getElementById('prepResume').value;
             const job = document.getElementById('prepJob').value;
@@ -385,7 +399,7 @@
             document.getElementById('prepLoading').classList.remove('active');
         }
 
-        // --- Feedback & Audio Mock Interview Feature ---
+        // --- 4. Feedback & Audio Mock Interview Feature ---
         let recognition = null;
         let isRecording = false;
 
@@ -451,6 +465,7 @@
             document.getElementById('feedbackOutput').classList.add('hidden');
 
             const sysInstruct = "You are a highly analytical interview coach and behavioral psychologist.";
+            
             const prompt = `I was asked this interview question: "${questions}"\n\nHere is my transcribed answer: "${answer}"\n\nPlease evaluate my response on two distinct fronts:\n\n**1. Content & Structure**\nEvaluate what I did well, what I missed, and provide a polished example of how I could have answered it better using the STAR method.\n\n**2. Confidence Level & Delivery Analysis**\nPerform a linguistic tone analysis on the text of my answer. Calculate a 'Confidence Score' (0-100%). Look specifically for hesitation markers, filler words (e.g., um, ah, like, you know), hedging or passive language (e.g., 'I think maybe', 'sort of', 'we tried to'), and the assertiveness of my sentence structure. Provide a brief psychological breakdown of how an interviewer would perceive my confidence based on these linguistic markers, and give me specific advice on what words to eliminate to sound more authoritative.`;
 
             const result = await callGemini(sysInstruct, prompt);
@@ -463,7 +478,7 @@
             document.getElementById('feedbackLoading').classList.remove('active');
         }
 
-        // --- Resume Tailoring Feature ---
+        // --- 5. Resume Tailoring Feature ---
         async function analyzeResumeGaps() {
             const resume = document.getElementById('tailorResume').value;
             const job = document.getElementById('tailorJob').value;
@@ -509,7 +524,7 @@
             document.getElementById('tailorFinalLoading').classList.remove('active');
         }
 
-        // --- Resume Grilling Feature ---
+        // --- 6. Resume Grilling Feature ---
         async function grillResume() {
             const resume = document.getElementById('grillingResume').value;
 

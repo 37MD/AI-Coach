@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Interview & Career Coach</title>
+    <!-- Tailwind CSS for mobile-first styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        black: '#000000',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Ensuring strict adherence to black text policy and aged paper background */
+        body { 
+            color: #000000; 
+            background-color: #F1E0C5; /* Light woodish brown (newspaper type) */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+        }
+        input, textarea, select, button, div, p, h1, h2, h3, span { color: #000000 !important; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .loading { display: none; }
+        .loading.active { display: inline-block; font-weight: bold; }
+        /* iOS friendly tap highlights */
+        * { -webkit-tap-highlight-color: rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body class="p-4 md:p-8 max-w-4xl mx-auto">
+
+    <header class="mb-6 border-b-2 border-black pb-4">
+        <h1 class="text-3xl font-bold mb-2">AI Career Coach</h1>
+        <p class="text-sm font-bold">Your personal interview prep, feedback, resume tailoring, grilling, and LinkedIn/Naukri job hunt assistant.</p>
+    </header>
+
+    <!-- Navigation Tabs Interface -->
+    <div class="border-b border-black mb-6">
+        <nav class="flex flex-wrap -mb-px" aria-label="Tabs">
+            <button onclick="switchTab('api-settings')" id="btn-api-settings" class="tab-btn py-2 px-4 font-bold border-t border-x border-black rounded-t-lg bg-gray-100 border-b-transparent mr-1 mb-1">
+                API Settings
+            </button>
+            <button onclick="switchTab('hunt')" id="btn-hunt" class="tab-btn py-2 px-4 font-bold border-t border-x border-transparent border-b border-black rounded-t-lg hover:bg-gray-200 bg-gray-300 mr-1 mb-1">
+                Job Hunt Strategy
+            </button>
+            <button onclick="switchTab('prep')" id="btn-prep" class="tab-btn py-2 px-4 font-bold border-t border-x border-transparent border-b border-black rounded-t-lg hover:bg-gray-200 bg-gray-300 mr-1 mb-1">
+                Interview Prep
+            </button>
+            <button onclick="switchTab('feedback')" id="btn-feedback" class="tab-btn py-2 px-4 font-bold border-t border-x border-transparent border-b border-black rounded-t-lg hover:bg-gray-200 bg-gray-300 mr-1 mb-1">
+                Feedback & Mock
+            </button>
+            <button onclick="switchTab('tailor')" id="btn-tailor" class="tab-btn py-2 px-4 font-bold border-t border-x border-transparent border-b border-black rounded-t-lg hover:bg-gray-200 bg-gray-300 mr-1 mb-1">
+                Resume Tailor
+            </button>
+            <button onclick="switchTab('grilling')" id="btn-grilling" class="tab-btn py-2 px-4 font-bold border-t border-x border-transparent border-b border-black rounded-t-lg hover:bg-gray-200 bg-gray-300 mb-1">
+                Resume Grilling
+            </button>
+        </nav>
+    </div>
+
+    <!-- Tab 0: API Settings -->
+    <section id="api-settings" class="tab-content active bg-gray-100 p-6 rounded shadow border border-black">
+        <h2 class="text-2xl font-bold mb-4">Gemini API Configuration</h2>
+        <div class="space-y-4">
+            <div class="bg-gray-200 p-4 rounded border border-black">
+                <label for="apiKeysInput" class="block font-bold mb-2">Gemini API Keys (Permanent Local Storage & Auto-Rotation):</label>
+                <p class="text-xs font-bold mb-2">Enter multiple keys (one per line) to enable load balancing and key rotation if rate limits are hit. The system will cascade through gemini-3.5-flash, gemini-3.1-flash-lite, gemini-3-flash, gemini-2.5-flash, and gemini-2.5-pro.</p>
+                <textarea id="apiKeysInput" rows="4" placeholder="Enter API Keys here..." class="w-full p-2 border border-black rounded bg-gray-50"></textarea>
+                <button onclick="saveApiKeys()" class="mt-2 bg-gray-400 hover:bg-gray-500 border border-black px-4 py-2 rounded font-bold w-full md:w-auto">Save & Store Keys Permanently</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Job Hunt Strategy Tab (Optimized for LinkedIn & Naukri.com) -->
+    <section id="hunt" class="tab-content bg-gray-100 p-6 rounded shadow border border-black">
+        <h2 class="text-2xl font-bold mb-4">LinkedIn & Naukri Job Hunt Strategy</h2>
+        <p class="mb-4 text-sm font-bold">Paste your resume and target location. The AI will analyze your profile and construct specialized keywords, search queries, and optimization strategies specifically engineered for LinkedIn and Naukri.com.</p>
+        
+        <div class="space-y-4">
+            <div>
+                <label class="block font-bold mb-1">Your Current Resume (Paste Text):</label>
+                <textarea id="huntResume" rows="4" class="w-full p-2 border border-black rounded bg-gray-50"></textarea>
+            </div>
+            <div>
+                <label class="block font-bold mb-1">Target Location (e.g., Mumbai, India):</label>
+                <input type="text" id="huntLocation" class="w-full p-2 border border-black rounded bg-gray-50" placeholder="Enter target city/country">
+            </div>
+            <div>
+                <label class="block font-bold mb-1">Availability / Work Preference:</label>
+                <input type="text" id="huntAvailability" class="w-full p-2 border border-black rounded bg-gray-50" placeholder="e.g., Immediate, Remote only, Hybrid, Willing to relocate">
+            </div>
+            <button onclick="generateJobHuntStrategy()" class="w-full bg-indigo-300 hover:bg-indigo-400 border border-black font-bold py-3 rounded">Generate LinkedIn & Naukri Strategy</button>
+            <div id="huntLoading" class="loading mt-2 font-bold">Analyzing profile for LinkedIn & Naukri optimization... please wait.</div>
+        </div>
+        
+        <div id="huntOutput" class="mt-6 p-4 bg-gray-200 border border-black rounded whitespace-pre-wrap font-bold hidden"></div>
+    </section>
+
+    <!-- Tab 1: Interview Preparation -->
+    <section id="prep" class="tab-content bg-gray-100 p-6 rounded shadow border border-black">
+        <h2 class="text-2xl font-bold mb-4">Interview Preparation</h2>
+        <p class="mb-4 text-sm font-bold">Provide your details to generate a custom interview guide.</p>
+        
+        <div class="space-y-4">
+            <div>
+                <label class="block font-bold mb-1">Your Current Resume (Paste Text):</label>
+                <textarea id="prepResume" rows="4" class="w-full p-2 border border-black rounded bg-gray-50"></textarea>
+            </div>
+            <div>
+                <label class="block font-bold mb-1">Target Job Description:</label>
+                <textarea id="prepJob" rows="4" class="w-full p-2 border border-black rounded bg-gray-50"></textarea>
+            </div>
+            <div>
+                <label class="block font-bold mb-1">Target Company Profile/Website Content (Paste Text):</label>
+                <textarea id="prepCompany" rows="3" class="w-full p-2 border border-black rounded bg-gray-50"></textarea>
+            </div>
+            <button onclick="generatePrep()" class="w-full bg-blue-300 hover:bg-blue-400 border border-black font-bold py-3 rounded">Generate Interview Guide</button>
+            <div id="prepLoading" class="loading mt-2 font-bold">Generating prep guide with cascading models... please wait.</div>
+        </div>
+        
+        <div id="prepOutput" class="mt-6 p-4 bg-gray-200 border border-black rounded whitespace-pre-wrap font-bold hidden"></div>
+    </section>
+
+    <!-- Tab 2: Feedback Session & Audio Mock Interview -->
+    <section id="feedback" class="tab-content bg-gray-100 p-6 rounded shadow border border-black">
+        <h2 class="text-2xl font-bold mb-4">Feedback Session, Mock & Confidence Check</h2>
+        <p class="mb-4 text-sm font-bold">Paste the questions you were asked, record your answer, and get AI feedback to improve your content and confidence level.</p>
+        
+        <div class="space-y-4">
+            <div>
+                <label class="block font-bold mb-1">Interview Questions Faced:</label>
+                <textarea id="feedbackQuestions" rows="3" class="w-full p-2 border border-black rounded bg-gray-50" placeholder="e.g., Tell me about a time you failed..."></textarea>
+            </div>
+            <div>
+                <label class="block font-bold mb-1">Your Answer:</label>
+                <div class="flex gap-2 mb-2">
+                    <button id="micBtn" onclick="toggleAudioRecording()" class="bg-red-300 hover:bg-red-400 border border-black font-bold py-2 px-4 rounded flex-1">🎤 Start Audio Recording</button>
+                </div>
+                <textarea id="feedbackAnswer" rows="5" class="w-full p-2 border border-black rounded bg-gray-50" placeholder="Type your answer here or use the microphone to speak..."></textarea>
+            </div>
+            <button onclick="getFeedback()" class="w-full bg-green-300 hover:bg-green-400 border border-black font-bold py-3 rounded">Evaluate Answer & Confidence Level</button>
+            <div id="feedbackLoading" class="loading mt-2 font-bold">Evaluating your response and confidence tone with cascading models... please wait.</div>
+        </div>
+        
+        <div id="feedbackOutput" class="mt-6 p-4 bg-gray-200 border border-black rounded whitespace-pre-wrap font-bold hidden"></div>
+    </section>
+
+    <!-- Tab 3: Resume Tailoring -->
+    <section id="tailor" class="tab-content bg-gray-100 p-6 rounded shadow border border-black">
+        <h2 class="text-2xl font-bold mb-4">Resume Tailoring & Optimization</h2>
+        <p class="mb-4 text-sm font-bold">The AI will analyze your resume against the job description and ask you clarifying questions to extract missing experience before generating a final resume.</p>
+        
+        <div class="space-y-4">
+            <div>
+                <label class="block font-bold mb-1">Current Resume (Paste Text):</label>
+                <textarea id="tailorResume" rows="4" class="w-full p-2 border border-black rounded bg-gray-50"></textarea>
+            </div>
+            <div>
+                <label class="block font-bold mb-1">Target Job Description:</label>
+                <textarea id="tailorJob" rows="4" class="w-full p-2 border border-black rounded bg-gray-50"></textarea>
+            </div>
+            <button onclick="analyzeResumeGaps()" class="w-full bg-yellow-300 hover:bg-yellow-400 border border-black font-bold py-3 rounded">Step 1: Analyze Gaps</button>
+            <div id="tailorLoading" class="loading mt-2 font-bold">Analyzing resume with cascading models... please wait.</div>
+        </div>
+
+        <!-- Follow-up Questions Container -->
+        <div id="tailorQuestionsContainer" class="mt-6 p-4 bg-orange-100 border border-black rounded hidden">
+            <h3 class="font-bold mb-2">AI Clarification Questions:</h3>
+            <p id="tailorAIQuestions" class="mb-4 font-bold whitespace-pre-wrap"></p>
+            <label class="block font-bold mb-1">Your Responses to the Above:</label>
+            <textarea id="tailorUserAnswers" rows="4" class="w-full p-2 border border-black rounded bg-gray-50 mb-4"></textarea>
+            <button onclick="generateFinalResume()" class="w-full bg-orange-300 hover:bg-orange-400 border border-black font-bold py-3 rounded">Step 2: Generate Tailored Resume</button>
+            <div id="tailorFinalLoading" class="loading mt-2 font-bold">Drafting final resume with cascading models... please wait.</div>
+        </div>
+        
+        <div id="tailorFinalOutput" class="mt-6 p-4 bg-gray-200 border border-black rounded whitespace-pre-wrap font-bold hidden"></div>
+    </section>
+
+    <!-- Tab 4: Resume Grilling -->
+    <section id="grilling" class="tab-content bg-gray-100 p-6 rounded shadow border border-black">
+        <h2 class="text-2xl font-bold mb-4">Resume Grilling (Stress Test)</h2>
+        <p class="mb-4 text-sm font-bold">The AI will heavily scrutinize your current/most recent job and ask tough, probing questions across the rest of the resume to prepare you for the worst-case scenario.</p>
+        
+        <div class="space-y-4">
+            <div>
+                <label class="block font-bold mb-1">Your Current Resume (Paste Text):</label>
+                <textarea id="grillingResume" rows="6" class="w-full p-2 border border-black rounded bg-gray-50" placeholder="Paste your full resume here to be evaluated..."></textarea>
+            </div>
+            <button onclick="grillResume()" class="w-full bg-red-300 hover:bg-red-400 border border-black font-bold py-3 rounded">Grill My Resume</button>
+            <div id="grillingLoading" class="loading mt-2 font-bold">Scrutinizing resume with cascading models... please wait.</div>
+        </div>
+        
+        <div id="grillingOutput" class="mt-6 p-4 bg-gray-200 border border-black rounded whitespace-pre-wrap font-bold hidden"></div>
+    </section>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- 1. System Settings, Key Permanent Storage & Rotation ---
+        const API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
+        const MODEL_CASCADE = [
+            "gemini-3.5-flash", 
+            "gemini-3.1-flash-lite", 
+            "gemini-3-flash", 
+            "gemini-2.5-flash", 
+            "gemini-2.5-pro"
+        ];
+        
+        window.onload = () => {
+            const savedKeys = JSON.parse(localStorage.getItem('gemini_api_keys') || '[]');
+            if (savedKeys.length > 0) {
+                document.getElementById('apiKeysInput').value = savedKeys.join('\n');
+            }
+        };
+
+        function saveApiKeys() {
+            const rawText = document.getElementById('apiKeysInput').value;
+            const keysArray = rawText.split(/[\n,]+/).map(k => k.trim()).filter(k => k !== "");
+            
+            if (keysArray.length === 0) {
+                alert("Please enter at least one API key.");
+                return;
+            }
+            
+            // Permanent local storage 
+            localStorage.setItem('gemini_api_keys', JSON.stringify(keysArray));
+            localStorage.setItem('gemini_key_rotation_index', '0'); // Reset rotation pointer
+            alert("Keys saved permanently in local storage! Auto-rotation enabled.");
+        }
+
+        function getRotatedKey() {
+            const keys = JSON.parse(localStorage.getItem('gemini_api_keys') || '[]');
+            if (keys.length === 0) return null;
+
+            let currentIndex = parseInt(localStorage.getItem('gemini_key_rotation_index') || '0', 10);
+            const currentKey = keys[currentIndex];
+            
+            // Rotate index for the next call
+            let nextIndex = (currentIndex + 1) % keys.length;
+            localStorage.setItem('gemini_key_rotation_index', nextIndex.toString());
+            
+            return currentKey;
+        }
+
+        // Semantically correct Tab Switch Engine
+        function switchTab(tabId) {
+            // Hide all tab content panes
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            
+            // Reset styles on all tab buttons to default inactive state
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('bg-gray-100', 'border-b-transparent', 'border-black');
+                el.classList.add('bg-gray-300', 'border-b-black', 'border-transparent');
+            });
+            
+            // Display targeted tab content pane
+            document.getElementById(tabId).classList.add('active');
+            
+            // Elevate targeted tab button to active look
+            const targetBtn = document.getElementById(`btn-${tabId}`);
+            if (targetBtn) {
+                targetBtn.classList.remove('bg-gray-300', 'border-b-black', 'border-transparent');
+                targetBtn.classList.add('bg-gray-100', 'border-b-transparent', 'border-black');
+            }
+        }
+
+        // --- 2. Advanced Gemini API Cascade Engine ---
+        async function callGemini(systemInstruction, userPrompt) {
+            const keys = JSON.parse(localStorage.getItem('gemini_api_keys') || '[]');
+            if (keys.length === 0) {
+                alert("Please store your Gemini API Keys under the 'API Settings' tab first.");
+                return null;
+            }
+
+            const payload = {
+                systemInstruction: { parts: [{ text: systemInstruction }] },
+                contents: [{ parts: [{ text: userPrompt }] }],
+                generationConfig: { temperature: 0.3 }
+            };
+
+            // Model Cascade Engine
+            for (let m = 0; m < MODEL_CASCADE.length; m++) {
+                const modelName = MODEL_CASCADE[m];
+                
+                // Key Retry Logic
+                for (let k = 0; k < keys.length; k++) {
+                    const apiKey = getRotatedKey(); 
+                    const endpoint = `${API_BASE_URL}${modelName}:generateContent?key=${apiKey}`;
+                    
+                    try {
+                        console.log(`[Cascade] Trying Model: ${modelName} | Key ending in: ...${apiKey.slice(-4)}`);
+                        
+                        const response = await fetch(endpoint, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            return data.candidates[0].content.parts[0].text;
+                        } else if (response.status === 429 || response.status === 403) {
+                            console.warn(`[Cascade] Rate limit or Quota error (429/403) on ${modelName}. Rotating key...`);
+                            continue; 
+                        } else {
+                            console.warn(`[Cascade] Model ${modelName} rejected request (Status: ${response.status}). Attempting next model in cascade.`);
+                            break; 
+                        }
+                    } catch (error) {
+                        console.error(`[Cascade] Network error reaching ${modelName}:`, error);
+                        break; 
+                    }
+                }
+            }
+
+            alert("Critical Error: All models in the cascade failed, or all keys exhausted their quotas. Please check your network and API usage limits.");
+            return null;
+        }
+
+        // --- Job Hunt Strategy Feature (Optimized for LinkedIn & Naukri.com) ---
+        async function generateJobHuntStrategy() {
+            const resume = document.getElementById('huntResume').value;
+            const location = document.getElementById('huntLocation').value;
+            const availability = document.getElementById('huntAvailability').value;
+            
+            if (!resume || !location) return alert("Resume and Target Location are required.");
+
+            document.getElementById('huntLoading').classList.add('active');
+            document.getElementById('huntOutput').classList.add('hidden');
+
+            const sysInstruct = "You are an elite talent acquisition headhunter and India job market strategist expert in LinkedIn and Naukri.com directory systems.";
+            const prompt = `Analyze the following candidate profile to generate a comprehensive strategy optimized specifically for LinkedIn and Naukri.com.\n\nCandidate Resume: ${resume}\nTarget Location: ${location}\nAvailability/Preferences: ${availability}\n\nPlease generate a highly tactical report detailing:\n\n1. **Naukri.com Optimization Blueprint**:\n- **Target Functional Area & Keywords**: Exact high-traffic keywords to include in the Resume Headline and Key Skills sections to maximize recruiter views on Naukri.\n- **Custom Naukri Profile Headline**: Provide 2 variations of impactful headlines within the character limits.\n\n2. **LinkedIn Profile & Search Masterplan**:\n- **Boolean Search Strings**: Provide precise Boolean search queries (using AND, OR, NOT) that the user can copy/paste directly into LinkedIn Search to discover unadvertised jobs.\n- **Profile Tagline & About Summary Advice**: Tailor keyword placements to help them rank in LinkedIn Recruiter searches.\n\n3. **Target Corporate Hit List (${location})**:\n- List 5-10 major companies, startups, or multinationals operating directly in or around ${location} that actively hire for this candidate's profile via LinkedIn and Naukri.\n\n4. **Outreach Scripts**: Provide a short, high-conversion template for cold-messaging hiring managers or recruiters on LinkedIn.`;
+
+            const result = await callGemini(sysInstruct, prompt);
+            
+            if (result) {
+                const outputDiv = document.getElementById('huntOutput');
+                outputDiv.innerText = result;
+                outputDiv.classList.remove('hidden');
+            }
+            document.getElementById('huntLoading').classList.remove('active');
+        }
+
+        // --- 3. Interview Preparation Feature ---
+        async function generatePrep() {
+            const resume = document.getElementById('prepResume').value;
+            const job = document.getElementById('prepJob').value;
+            const company = document.getElementById('prepCompany').value;
+            
+            if (!resume || !job) return alert("Resume and Job Description are required.");
+
+            document.getElementById('prepLoading').classList.add('active');
+            document.getElementById('prepOutput').classList.add('hidden');
+
+            const sysInstruct = "You are an expert technical and behavioral interview coach. Use formatting to make the guide clear and easy to read.";
+            const prompt = `Analyze this data to prepare the candidate.\n\nCompany Profile: ${company}\n\nJob Description: ${job}\n\nCandidate Resume: ${resume}\n\nGenerate: 1. A summary of what the company values based on the data. 2. Five tailored behavioral questions with advice on how the candidate should answer based on their resume. 3. Three technical/role-specific questions.`;
+
+            const result = await callGemini(sysInstruct, prompt);
+            
+            if (result) {
+                const outputDiv = document.getElementById('prepOutput');
+                outputDiv.innerText = result;
+                outputDiv.classList.remove('hidden');
+            }
+            document.getElementById('prepLoading').classList.remove('active');
+        }
+
+        // --- 4. Feedback & Audio Mock Interview Feature ---
+        let recognition = null;
+        let isRecording = false;
+
+        function initAudio() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert("Your browser does not support audio dictation. Please type your answer.");
+                return false;
+            }
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+                let finalTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+                const answerBox = document.getElementById('feedbackAnswer');
+                answerBox.value += finalTranscript;
+            };
+
+            recognition.onerror = (event) => {
+                console.error("Speech recognition error", event.error);
+                stopAudioRecording();
+            };
+            return true;
+        }
+
+        function toggleAudioRecording() {
+            const btn = document.getElementById('micBtn');
+            if (!isRecording) {
+                if (!recognition && !initAudio()) return;
+                recognition.start();
+                isRecording = true;
+                btn.innerText = "🛑 Stop Recording";
+                btn.classList.replace('bg-red-300', 'bg-red-500');
+            } else {
+                stopAudioRecording();
+            }
+        }
+
+        function stopAudioRecording() {
+            if (recognition) recognition.stop();
+            isRecording = false;
+            const btn = document.getElementById('micBtn');
+            btn.innerText = "🎤 Start Audio Recording";
+            btn.classList.replace('bg-red-500', 'bg-red-300');
+        }
+
+        async function getFeedback() {
+            const questions = document.getElementById('feedbackQuestions').value;
+            const answer = document.getElementById('feedbackAnswer').value;
+
+            if (!questions || !answer) return alert("Please provide both the question and your answer.");
+
+            document.getElementById('feedbackLoading').classList.add('active');
+            document.getElementById('feedbackOutput').classList.add('hidden');
+
+            const sysInstruct = "You are a highly analytical interview coach and behavioral psychologist.";
+            
+            const prompt = `I was asked this interview question: "${questions}"\n\nHere is my transcribed answer: "${answer}"\n\nPlease evaluate my response on two distinct fronts:\n\n**1. Content & Structure**\nEvaluate what I did well, what I missed, and provide a polished example of how I could have answered it better using the STAR method.\n\n**2. Confidence Level & Delivery Analysis**\nPerform a linguistic tone analysis on the text of my answer. Calculate a 'Confidence Score' (0-100%). Look specifically for hesitation markers, filler words (e.g., um, ah, like, you know), hedging or passive language (e.g., 'I think maybe', 'sort of', 'we tried to'), and the assertiveness of my sentence structure. Provide a brief psychological breakdown of how an interviewer would perceive my confidence based on these linguistic markers, and give me specific advice on what words to eliminate to sound more authoritative.`;
+
+            const result = await callGemini(sysInstruct, prompt);
+
+            if (result) {
+                const outputDiv = document.getElementById('feedbackOutput');
+                outputDiv.innerText = result;
+                outputDiv.classList.remove('hidden');
+            }
+            document.getElementById('feedbackLoading').classList.remove('active');
+        }
+
+        // --- 5. Resume Tailoring Feature ---
+        async function analyzeResumeGaps() {
+            const resume = document.getElementById('tailorResume').value;
+            const job = document.getElementById('tailorJob').value;
+
+            if (!resume || !job) return alert("Please provide both Resume and Job Description.");
+
+            document.getElementById('tailorLoading').classList.add('active');
+            document.getElementById('tailorQuestionsContainer').classList.add('hidden');
+            
+            const sysInstruct = "You are an expert resume writer.";
+            const prompt = `Compare this resume against the job description.\n\nResume: ${resume}\n\nJob: ${job}\n\nIdentify the gaps. Ask me 3 to 5 specific, clarifying questions about my past experience to try and extract information that might fill these gaps so you can write a better resume. Return ONLY the questions.`;
+
+            const result = await callGemini(sysInstruct, prompt);
+
+            if (result) {
+                document.getElementById('tailorAIQuestions').innerText = result;
+                document.getElementById('tailorQuestionsContainer').classList.remove('hidden');
+            }
+            document.getElementById('tailorLoading').classList.remove('active');
+        }
+
+        async function generateFinalResume() {
+            const resume = document.getElementById('tailorResume').value;
+            const job = document.getElementById('tailorJob').value;
+            const aiQuestions = document.getElementById('tailorAIQuestions').innerText;
+            const userAnswers = document.getElementById('tailorUserAnswers').value;
+
+            if (!userAnswers) return alert("Please answer the clarification questions first.");
+
+            document.getElementById('tailorFinalLoading').classList.add('active');
+            document.getElementById('tailorFinalOutput').classList.add('hidden');
+
+            const sysInstruct = "You are an expert resume writer. Format the resume cleanly in plain text with distinct sections.";
+            const prompt = `Here is my original resume: ${resume}\n\nHere is the target job: ${job}\n\nYou asked me these questions to fill the gaps: ${aiQuestions}\n\nHere are my answers: ${userAnswers}\n\nUsing all of this information, rewrite my resume so it is perfectly tailored to the job description while remaining entirely truthful based on the data provided. Optimize bullet points for impact.`;
+
+            const result = await callGemini(sysInstruct, prompt);
+
+            if (result) {
+                const outputDiv = document.getElementById('tailorFinalOutput');
+                outputDiv.innerText = result;
+                outputDiv.classList.remove('hidden');
+            }
+            document.getElementById('tailorFinalLoading').classList.remove('active');
+        }
+
+        // --- 6. Resume Grilling Feature ---
+        async function grillResume() {
+            const resume = document.getElementById('grillingResume').value;
+
+            if (!resume) return alert("Please paste your resume to be grilled.");
+
+            document.getElementById('grillingLoading').classList.add('active');
+            document.getElementById('grillingOutput').classList.add('hidden');
+
+            const sysInstruct = "You are an extremely tough, skeptical, and highly critical interviewer. Your goal is to stress-test the candidate. Format the output cleanly using bullet points or numbered lists.";
+            
+            const prompt = `Here is the candidate's resume:\n\n${resume}\n\nFirst, identify the most recent or current job position listed. Since the current job is the most important and typically faces the vast majority of interview scrutiny, dedicate at least 60% of your extremely tough, probing questions specifically to this most recent role. \n\nAfter thoroughly grilling the current role, evaluate the rest of the resume critically. Generate questions aimed at finding weaknesses, exposing exaggerations, or testing technical depths and knowledge gaps in their stated experience. Group all questions clearly by the specific section or line of the resume they target.`;
+
+            const result = await callGemini(sysInstruct, prompt);
+
+            if (result) {
+                const outputDiv = document.getElementById('grillingOutput');
+                outputDiv.innerText = result;
+                outputDiv.classList.remove('hidden');
+            }
+            document.getElementById('grillingLoading').classList.remove('active');
+        }
+    </script>
+</body>
+</html>

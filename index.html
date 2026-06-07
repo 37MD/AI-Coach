@@ -161,7 +161,7 @@
             </div>
             <div>
                 <label class="block font-bold mb-1">Target Job Description:</label>
-                <textarea id="tailorJob" rows="5" class="w-full p-2 border border-black rounded bg-gray-50" placeholder="Paste the full job description here..."></textarea>
+                <textarea id="tailorJob" rows="5" class="w-full p-2 border border-black rounded bg-gray-50" placeholder="Paste the full job description here..." oninput="localStorage.setItem('iv_tailor_jd',this.value)"></textarea>
             </div>
 
             <!-- Two paths: quick or deep -->
@@ -393,11 +393,11 @@
                 <div class="flex flex-col md:flex-row gap-4 mb-3">
                     <div class="flex-1">
                         <label for="apiKey1" class="block font-bold mb-1">API Key 1:</label>
-                        <input type="text" id="apiKey1" class="w-full p-2 border border-black rounded bg-gray-50 font-mono text-sm" placeholder="Enter Gemini API Key 1...">
+                        <input type="password" id="apiKey1" class="w-full p-2 border border-black rounded bg-gray-50 font-mono text-sm" placeholder="Enter Gemini API Key 1..." autocomplete="off">
                     </div>
                     <div class="flex-1">
                         <label for="apiKey2" class="block font-bold mb-1">API Key 2:</label>
-                        <input type="text" id="apiKey2" class="w-full p-2 border border-black rounded bg-gray-50 font-mono text-sm" placeholder="Enter Gemini API Key 2...">
+                        <input type="password" id="apiKey2" class="w-full p-2 border border-black rounded bg-gray-50 font-mono text-sm" placeholder="Enter Gemini API Key 2..." autocomplete="off">
                     </div>
                 </div>
                 <button onclick="saveApiKeys()" class="bg-gray-400 hover:bg-gray-500 border border-black px-4 py-2 rounded font-bold w-full md:w-auto">Save & Store Keys Permanently</button>
@@ -423,8 +423,18 @@
             const savedKeys = JSON.parse(localStorage.getItem('gemini_api_keys') || '[]');
             _cachedKeys = savedKeys;
             _cachedKeyIndex = parseInt(localStorage.getItem('gemini_key_rotation_index') || '0', 10);
-            if (savedKeys[0]) document.getElementById('apiKey1').value = savedKeys[0];
-            if (savedKeys[1]) document.getElementById('apiKey2').value = savedKeys[1];
+            const k1el = document.getElementById('apiKey1');
+            const k2el = document.getElementById('apiKey2');
+            if (savedKeys[0] && k1el) {
+                k1el.value = savedKeys[0];
+                k1el.style.backgroundColor = '#dcfce7';
+                k1el.style.borderColor = '#16a34a';
+            }
+            if (savedKeys[1] && k2el) {
+                k2el.value = savedKeys[1];
+                k2el.style.backgroundColor = '#dcfce7';
+                k2el.style.borderColor = '#16a34a';
+            }
         });
 
         function saveApiKeys() {
@@ -443,7 +453,24 @@
                 localStorage.setItem('gemini_key_rotation_index', '0');
                 _cachedKeyIndex = 0;
             }
-            alert("Keys saved!");
+
+            // Turn saved key inputs green
+            const k1el = document.getElementById('apiKey1');
+            const k2el = document.getElementById('apiKey2');
+            if (k1el && key1) { k1el.style.backgroundColor = '#dcfce7'; k1el.style.borderColor = '#16a34a'; }
+            if (k2el && key2) { k2el.style.backgroundColor = '#dcfce7'; k2el.style.borderColor = '#16a34a'; }
+
+            // Show confirmation
+            let status = document.getElementById('apiKeyStatus');
+            if (!status) {
+                status = document.createElement('p');
+                status.id = 'apiKeyStatus';
+                status.className = 'text-sm font-bold mt-2';
+                document.querySelector('#api-settings .bg-gray-200').appendChild(status);
+            }
+            status.style.color = '#15803d';
+            status.textContent = '&#10003; Keys saved successfully! AI features are now active.';
+            status.innerHTML = '&#10003; ' + keysArray.length + ' key' + (keysArray.length > 1 ? 's' : '') + ' saved successfully! AI features are now active.';
         }
 
         // In-memory key cache for performance
@@ -670,19 +697,53 @@
         document.addEventListener('DOMContentLoaded', () => {
             const masterResume = document.getElementById('masterResume');
             const linkedFields = ['huntResume', 'prepResume', 'tailorResume', 'grillingResume'];
+
+            // --- Persistent save: Master Resume ---
+            const savedMaster = localStorage.getItem('iv_master_resume');
+            if (savedMaster) {
+                masterResume.value = savedMaster;
+                linkedFields.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el && el.value === '') el.value = savedMaster;
+                });
+            }
             masterResume.addEventListener('input', () => {
+                localStorage.setItem('iv_master_resume', masterResume.value);
                 linkedFields.forEach(id => {
                     const el = document.getElementById(id);
                     if (el && el.value === '') el.value = masterResume.value;
                 });
             });
-            // Also sync on blur for reliability
             masterResume.addEventListener('blur', () => {
+                localStorage.setItem('iv_master_resume', masterResume.value);
                 linkedFields.forEach(id => {
                     const el = document.getElementById(id);
                     if (el && el.value === '') el.value = masterResume.value;
                 });
             });
+
+            // --- Persistent restore: Tailor outputs ---
+            const savedQuick = localStorage.getItem('iv_tailor_quick');
+            const savedDeep  = localStorage.getItem('iv_tailor_deep');
+            const savedJD    = localStorage.getItem('iv_tailor_jd');
+            const lastType   = localStorage.getItem('iv_tailor_last_type');
+
+            if (savedJD) document.getElementById('tailorJob') && (document.getElementById('tailorJob').value = savedJD);
+
+            if (lastType && (savedQuick || savedDeep)) {
+                const resumeText = lastType === 'deep' ? (savedDeep || savedQuick) : (savedQuick || savedDeep);
+                if (resumeText) {
+                    document.getElementById('tailorFinalOutputContent').innerText = resumeText;
+                    document.getElementById('tailorFinalOutput').classList.remove('hidden');
+                    const savedChanges = localStorage.getItem('iv_tailor_changes');
+                    if (savedChanges) {
+                        document.getElementById('tailorDiffText').textContent = savedChanges;
+                        document.getElementById('tailorDiffStrip').classList.remove('hidden');
+                    }
+                    // Restore chat context silently
+                    TailorChat.setContextSilent(resumeText, savedJD || '');
+                }
+            }
         });
 
         // --- Fix 3: Show interim speech transcript as live preview ---
@@ -846,6 +907,11 @@ Output ONLY the complete tailored resume followed by the CHANGES MADE section. N
                     }
 
                     // Seed RAG chat with resume + JD context
+                    // Persist Quick Tailor output
+                    localStorage.setItem('iv_tailor_quick', resumeText);
+                    localStorage.setItem('iv_tailor_jd', job);
+                    localStorage.setItem('iv_tailor_last_type', 'quick');
+                    if (changesText) localStorage.setItem('iv_tailor_changes', changesText);
                     TailorChat.setContext(resumeText, job);
                 }
             } finally {
@@ -941,6 +1007,11 @@ Output ONLY the complete tailored resume + CHANGES MADE. No commentary before it
                     }
 
                     // Seed RAG chat with resume + JD context
+                    // Persist Deep Tailor output
+                    localStorage.setItem('iv_tailor_deep', resumeText);
+                    localStorage.setItem('iv_tailor_jd', job);
+                    localStorage.setItem('iv_tailor_last_type', 'deep');
+                    if (changesText) localStorage.setItem('iv_tailor_changes', changesText);
                     TailorChat.setContext(resumeText, job);
                 }
             } finally {
@@ -1610,11 +1681,17 @@ Output the improved resume only. No commentary.`;
                 _resume = resume;
                 _jd = jd;
                 _history = [];
-                // Show the chat panel
                 document.getElementById('tailorAIChat').classList.remove('hidden');
-                // Reset messages
                 var msgs = document.getElementById('tailorChat-messages');
                 msgs.innerHTML = '<div class="tmsg ai"><div class="tbubble ai">Your tailored resume is ready. Ask me anything — ATS score, missing keywords, how to strengthen a bullet, or how to answer interview questions based on it.</div></div>';
+            }
+
+            // Silent restore on page load — no panel reset, no scroll
+            function setContextSilent(resume, jd) {
+                _resume = resume;
+                _jd = jd;
+                _history = [];
+                document.getElementById('tailorAIChat').classList.remove('hidden');
             }
 
             function clear() {
@@ -1711,7 +1788,7 @@ Output the improved resume only. No commentary.`;
                 }
             }
 
-            return { setContext: setContext, send: send, clear: clear };
+            return { setContext: setContext, setContextSilent: setContextSilent, send: send, clear: clear };
         })();
         var IVAnalyze = (function() {
             function renderHtml(data) {

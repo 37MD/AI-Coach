@@ -1,173 +1,123 @@
 <!DOCTYPE html>
-<!--
-╔══════════════════════════════════════════════════════════════════════════════╗
-║              AI CAREER COACH  –  Single-File Application                    ║
-║                                                                              ║
-║  ARCHITECTURE OVERVIEW                                                       ║
-║  ─────────────────────────────────────────────────────────────────────────  ║
-║  • Pure HTML / Tailwind CSS / Vanilla JS  (zero build step, zero deps)      ║
-║  • All state stored in localStorage (no backend)                             ║
-║  • Gemini API called client-side via fetch()                                 ║
-║                                                                              ║
-║  TABS (in display order)                                                     ║
-║    1. Master Resume   – single source of truth for resume text               ║
-║    2. Job Hunt        – LinkedIn & Naukri strategy generator                 ║
-║    3. Resume Tailor   – gap analysis + AI-rewritten resume                   ║
-║    4. Interview Prep  – company-specific question bank                       ║
-║    5. IV Mock         – question bank, mic recording, confidence feedback    ║
-║    6. Resume Grilling – adversarial stress-test question generator           ║
-║    7. IV Videos       – curated YouTube interview guides                     ║
-║    8. Daily AI Coach  – multi-turn career coaching + persistent skill bank   ║
-║    9. API Settings    – Gemini key storage                                   ║
-║                                                                              ║
-║  GLOBAL FEATURES                                                             ║
-║    ⚡ Thunder Button   – floating quick-ask AI chat (all pages)              ║
-║                                                                              ║
-║  KEY PATTERNS                                                                ║
-║    • callGemini()     – shared cascade engine used by all features           ║
-║    • renderMarkdown() – lightweight MD→HTML renderer                         ║
-║    • safeWrap()       – XML tag wrapper to prevent prompt injection          ║
-║    • switchTab()      – single tab controller for all 9 tabs                 ║
-║                                                                              ║
-║  LOCALSTORAGE KEYS                                                           ║
-║    gemini_api_keys           – JSON array of up to 2 API keys               ║
-║    gemini_key_rotation_index – integer, persists rotation position           ║
-║    coach_skills_v1           – JSON array of {name, context, date}          ║
-║    coach_history_v1          – JSON array of Gemini message turns           ║
-╚══════════════════════════════════════════════════════════════════════════════╝
--->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AI Interview & Career Coach</title>
-
-    <!--
-    ══════════════════════════════════════════════════════════════════
-    SECTION 1 — TAILWIND CSS
-    Must be configured BEFORE the CDN script loads.
-    ══════════════════════════════════════════════════════════════════
-    -->
+    <!-- Tailwind CSS for mobile-first styling -->
     <script>
         window.tailwind = window.tailwind || {};
         window.tailwind.config = {
-            theme: { extend: { colors: { black: '#000000' } } }
+            theme: {
+                extend: {
+                    colors: { black: '#000000' }
+                }
+            }
         };
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!--
-    ══════════════════════════════════════════════════════════════════
-    SECTION 2 — GLOBAL STYLES
-    Aged-paper palette + component primitives.
-    Do not put Tailwind overrides here; use utility classes in HTML.
-    ══════════════════════════════════════════════════════════════════
-    -->
     <style>
-        /* ── Page foundation ──────────────────────────────────── */
-        body {
-            color: #000;
-            background-color: #F1E0C5;   /* aged-paper warm beige */
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        /* Ensuring strict adherence to black text policy and aged paper background */
+        body { 
+            color: #000000; 
+            background-color: #F1E0C5; /* Light woodish brown (newspaper type) */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
         }
-        * { -webkit-tap-highlight-color: rgba(0,0,0,0.1); } /* iOS tap feedback */
-
-        /* ── Tab system ───────────────────────────────────────── */
-        .tab-content          { display: none; }
-        .tab-content.active   { display: block; }
-        .tab-btn              { border-bottom: 2px solid black; }
-        /* Active tab merges with the content panel by hiding its bottom border */
-        .tab-btn.tab-active   { border-bottom-color: #F1E0C5 !important; background-color: #F3F4F6; }
-
-        /* ── Loading spinner text ─────────────────────────────── */
-        .loading              { display: none; }
-        .loading.active       { display: inline-block; font-weight: bold; }
-
-        /* ── Daily Coach: chat bubble layout ─────────────────── */
-        .coach-msg            { display: flex; }
-        .coach-msg.user       { justify-content: flex-end; }
-        .coach-msg.user .bubble {
-            background: #1a1a1a; color: #f0e6d0;
-            border-radius: 18px 18px 4px 18px;
-            padding: 10px 14px; font-size: 14px; max-width: 80%; line-height: 1.5;
-        }
-        .coach-msg.ai .bubble {
-            background: #f3f4f6; border: 1px solid #d1d5db;
-            border-radius: 18px 18px 18px 4px;
-            padding: 10px 14px; font-size: 14px; max-width: 85%; line-height: 1.5;
-        }
-
-        /* ── Daily Coach: skill tag pills ────────────────────── */
-        .skill-tag {
-            display: inline-block;
-            background: #1a1a1a; color: #f0e6d0;
-            border-radius: 4px; padding: 2px 10px;
-            font-size: 11px; font-weight: 700;
-            letter-spacing: .06em; text-transform: uppercase;
-        }
-
-        /* ── Thunder: floating chat bubble layout ────────────── */
-        .tmsg                 { display: flex; margin-bottom: 2px; }
-        .tmsg.user            { justify-content: flex-end; }
-        .tbubble              { padding: 8px 12px; border-radius: 14px; font-size: 13px; line-height: 1.5; max-width: 86%; }
-        .tbubble.ai           { background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 14px 14px 14px 4px; }
-        .tbubble.user         { background: #1a1a1a; color: #f0e6d0; border-radius: 14px 14px 4px 14px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .loading { display: none; }
+        .loading.active { display: inline-block; font-weight: bold; }
+        /* iOS friendly tap highlights */
+        * { -webkit-tap-highlight-color: rgba(0,0,0,0.1); }
     </style>
 </head>
-
-<!--
-══════════════════════════════════════════════════════════════════
-SECTION 3 — PAGE SHELL & HEADER
-══════════════════════════════════════════════════════════════════
--->
 <body class="p-4 md:p-8 max-w-4xl mx-auto">
 
     <header class="mb-6 border-b-2 border-black pb-4">
-        <h1 class="text-3xl font-bold mb-1">AI Career Coach</h1>
-        <p class="text-sm font-bold">Interview prep · Resume tailoring · Job hunt · Daily coaching · ⚡ Quick AI on every screen</p>
+        <h1 class="text-3xl font-bold mb-2">AI Career Coach</h1>
+        <p class="text-sm font-bold">Your personal interview prep, feedback, resume tailoring, grilling, and LinkedIn/Naukri job hunt assistant.</p>
     </header>
 
-    <!--
-    ══════════════════════════════════════════════════════════════════
-    SECTION 4 — TAB NAVIGATION BAR
-    Tab order matches the user journey: profile → hunt → tailor →
-    prep → mock → grill → videos → coach → settings.
-    Each button targets a <section id="..."> below.
-    ══════════════════════════════════════════════════════════════════
-    -->
+    <style>
+        /* Active tab: hide bottom border so it appears connected to the content panel */
+        .tab-btn.tab-active { border-bottom-color: #F1E0C5 !important; background-color: #F3F4F6; }
+        .tab-btn { border-bottom: 2px solid black; }
+
+        /* Coach chat bubbles */
+        .coach-msg { display:flex; }
+        .coach-msg.user { justify-content:flex-end; }
+        .coach-msg.user .bubble {
+            background:#1a1a1a; color:#f0e6d0;
+            border-radius:18px 18px 4px 18px;
+            padding:10px 14px; font-size:14px; max-width:80%; line-height:1.5;
+        }
+        .coach-msg.ai .bubble {
+            background:#f3f4f6; border:1px solid #d1d5db;
+            border-radius:18px 18px 18px 4px;
+            padding:10px 14px; font-size:14px; max-width:85%; line-height:1.5;
+        }
+        .coach-msg.ai .bubble strong { color:#111; }
+        .skill-tag {
+            display:inline-block; background:#1a1a1a; color:#f0e6d0;
+            border-radius:4px; padding:2px 10px; font-size:11px; font-weight:700;
+            letter-spacing:.06em; text-transform:uppercase;
+        }
+        /* âš¡ Analyse button & panel */
+        .btn-iv-analyze{background:#1a1a1a;color:#f0e6d0;border:none;border-radius:4px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;padding:4px 9px;cursor:pointer;white-space:nowrap;transition:opacity .15s;flex-shrink:0;}
+        .btn-iv-analyze:hover{opacity:.78}
+        .btn-iv-analyze.loading{background:#6b7280;cursor:wait}
+        .iv-ai-panel{display:none;margin:4px 0 8px;border:2px solid #1a1a1a;border-radius:6px;overflow:hidden;background:#f9f7f4;}
+        .iv-ai-panel.open{display:block}
+        .iv-ai-panel-hdr{background:#1a1a1a;color:#f0e6d0;padding:8px 12px;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;display:flex;align-items:center;justify-content:space-between;}
+        .iv-ai-panel-close{background:none;border:none;color:#f0e6d0;font-size:16px;cursor:pointer;line-height:1;}
+        .iv-ai-panel-body{padding:12px;font-size:13px;line-height:1.65;color:#111;}
+        .iv-ai-panel-body strong{display:block;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:#1a1a1a;margin:10px 0 4px;}
+        .iv-ai-panel-body strong:first-child{margin-top:0}
+        .iv-ai-panel-body p{margin:0 0 4px;}
+        .iv-tag{display:inline-block;background:#1a1a1a;color:#f0e6d0;border-radius:3px;padding:1px 8px;font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;margin:2px 3px 2px 0;}
+        .iv-spin{display:inline-block;animation:iv-spin .8s linear infinite;}
+        @keyframes iv-spin{to{transform:rotate(360deg)}}
+    </style>
     <div class="border-b-2 border-black mb-6">
-        <nav class="flex flex-wrap" aria-label="Main navigation" role="tablist">
-            <button onclick="switchTab('master')"      id="btn-master"      role="tab" aria-selected="true"  aria-controls="master"      class="tab-btn tab-active py-2 px-3 font-bold border border-black rounded-t-lg bg-gray-100 mr-1 mb-0 text-sm">📄 Master Resume</button>
-            <button onclick="switchTab('hunt')"        id="btn-hunt"        role="tab" aria-selected="false" aria-controls="hunt"        class="tab-btn py-2 px-3 font-bold border border-black rounded-t-lg hover:bg-gray-200 bg-gray-300 mr-1 mb-0 text-sm">Job Hunt</button>
-            <button onclick="switchTab('tailor')"      id="btn-tailor"      role="tab" aria-selected="false" aria-controls="tailor"      class="tab-btn py-2 px-3 font-bold border border-black rounded-t-lg hover:bg-gray-200 bg-gray-300 mr-1 mb-0 text-sm">Resume Tailor</button>
-            <button onclick="switchTab('prep')"        id="btn-prep"        role="tab" aria-selected="false" aria-controls="prep"        class="tab-btn py-2 px-3 font-bold border border-black rounded-t-lg hover:bg-gray-200 bg-gray-300 mr-1 mb-0 text-sm">Interview Prep</button>
-            <button onclick="switchTab('feedback')"    id="btn-feedback"    role="tab" aria-selected="false" aria-controls="feedback"    class="tab-btn py-2 px-3 font-bold border border-black rounded-t-lg hover:bg-gray-200 bg-gray-300 mr-1 mb-0 text-sm">IV Mock &amp; Feedback</button>
-            <button onclick="switchTab('grilling')"    id="btn-grilling"    role="tab" aria-selected="false" aria-controls="grilling"    class="tab-btn py-2 px-3 font-bold border border-black rounded-t-lg hover:bg-gray-200 bg-gray-300 mr-1 mb-0 text-sm">Resume Grilling</button>
-            <button onclick="switchTab('videos')"      id="btn-videos"      role="tab" aria-selected="false" aria-controls="videos"      class="tab-btn py-2 px-3 font-bold border border-black rounded-t-lg hover:bg-gray-200 bg-gray-300 mr-1 mb-0 text-sm">🎥 IV Videos</button>
-            <button onclick="switchTab('coach')"       id="btn-coach"       role="tab" aria-selected="false" aria-controls="coach"       class="tab-btn py-2 px-3 font-bold border border-black rounded-t-lg hover:bg-gray-200 bg-gray-300 mr-1 mb-0 text-sm">🧠 Daily AI Coach</button>
-            <button onclick="switchTab('api-settings')" id="btn-api-settings" role="tab" aria-selected="false" aria-controls="api-settings" class="tab-btn py-2 px-3 font-bold border border-black rounded-t-lg hover:bg-gray-200 bg-gray-300 mb-0 text-sm">⚙️ API Settings</button>
+        <nav class="flex flex-wrap" aria-label="Tabs" role="tablist">
+            <button onclick="switchTab('master')" id="btn-master" role="tab" aria-selected="true" aria-controls="master" class="tab-btn tab-active py-2 px-4 font-bold border border-black rounded-t-lg bg-gray-100 mr-1 mb-0">
+                ðŸ“„ Master Resume
+            </button>
+            <button onclick="switchTab('hunt')" id="btn-hunt" role="tab" aria-selected="false" aria-controls="hunt" class="tab-btn py-2 px-4 font-bold border border-black rounded-t-lg hover:bg-gray-200 bg-gray-300 mr-1 mb-0">
+                Job Hunt
+            </button>
+            <button onclick="switchTab('tailor')" id="btn-tailor" role="tab" aria-selected="false" aria-controls="tailor" class="tab-btn py-2 px-4 font-bold border border-black rounded-t-lg hover:bg-gray-200 bg-gray-300 mr-1 mb-0">
+                Resume Tailor
+            </button>
+            <button onclick="switchTab('prep')" id="btn-prep" role="tab" aria-selected="false" aria-controls="prep" class="tab-btn py-2 px-4 font-bold border border-black rounded-t-lg hover:bg-gray-200 bg-gray-300 mr-1 mb-0">
+                Interview Prep
+            </button>
+            <button onclick="switchTab('feedback')" id="btn-feedback" role="tab" aria-selected="false" aria-controls="feedback" class="tab-btn py-2 px-4 font-bold border border-black rounded-t-lg hover:bg-gray-200 bg-gray-300 mr-1 mb-0">
+                IV Mock &amp; Feedback
+            </button>
+            <button onclick="switchTab('grilling')" id="btn-grilling" role="tab" aria-selected="false" aria-controls="grilling" class="tab-btn py-2 px-4 font-bold border border-black rounded-t-lg hover:bg-gray-200 bg-gray-300 mr-1 mb-0">
+                Resume Grilling
+            </button>
+            <button onclick="switchTab('videos')" id="btn-videos" role="tab" aria-selected="false" aria-controls="videos" class="tab-btn py-2 px-4 font-bold border border-black rounded-t-lg hover:bg-gray-200 bg-gray-300 mr-1 mb-0">
+                ðŸŽ¥ IV Videos
+            </button>
+            <button onclick="switchTab('coach')" id="btn-coach" role="tab" aria-selected="false" aria-controls="coach" class="tab-btn py-2 px-4 font-bold border border-black rounded-t-lg hover:bg-gray-200 bg-gray-300 mr-1 mb-0">
+                ðŸ§  Daily AI Coach
+            </button>
+            <button onclick="switchTab('api-settings')" id="btn-api-settings" role="tab" aria-selected="false" aria-controls="api-settings" class="tab-btn py-2 px-4 font-bold border border-black rounded-t-lg hover:bg-gray-200 bg-gray-300 mb-0">
+                API Settings
+            </button>
         </nav>
     </div>
 
-
-    <!--
-    ══════════════════════════════════════════════════════════════════
-    TAB 1 — MASTER RESUME
-    Single source of truth. Syncs to all other tabs on input/blur.
-    ══════════════════════════════════════════════════════════════════
-    -->
+    <!-- Master Resume Tab -->
     <section id="master" class="tab-content active bg-gray-100 p-6 rounded shadow border border-black">
-        <h2 class="text-2xl font-bold mb-4">📄 Master Resume</h2>
+        <h2 class="text-2xl font-bold mb-4">ðŸ“„ Master Resume</h2>
         <p class="mb-4 text-sm">Paste your resume once here. It will auto-fill the resume field in all other tabs.</p>
         <textarea id="masterResume" rows="18" class="w-full p-2 border border-black rounded bg-gray-50" placeholder="Paste your full resume here..."></textarea>
     </section>
 
-    <!--
-    ══════════════════════════════════════════════════════════════════
-    TAB 2 — JOB HUNT STRATEGY
-    Generates LinkedIn/Naukri-optimised hunt plan from resume + location.
-    ══════════════════════════════════════════════════════════════════
-    -->
+    <!-- Job Hunt Strategy Tab (Optimized for LinkedIn & Naukri.com) -->
     <section id="hunt" class="tab-content bg-gray-100 p-6 rounded shadow border border-black">
         <h2 class="text-2xl font-bold mb-4">LinkedIn & Naukri Job Hunt Strategy</h2>
         <p class="mb-4 text-sm font-bold">Paste your resume and target location. The AI will analyze your profile and construct specialized keywords, search queries, and optimization strategies specifically engineered for LinkedIn and Naukri.com.</p>
@@ -192,60 +142,73 @@ SECTION 3 — PAGE SHELL & HEADER
         <div id="huntOutput" class="mt-6 hidden">
             <div class="flex justify-between items-center mb-1">
                 <span class="font-bold text-sm">Result</span>
-                <button onclick="copyOutput('huntOutputContent')" class="text-xs border border-black px-2 py-1 rounded bg-gray-300 hover:bg-gray-400 font-bold">📋 Copy</button>
+                <button onclick="copyOutput('huntOutputContent')" class="text-xs border border-black px-2 py-1 rounded bg-gray-300 hover:bg-gray-400 font-bold">ðŸ“‹ Copy</button>
             </div>
             <div id="huntOutputContent" class="p-4 bg-gray-200 border border-black rounded font-normal text-sm leading-relaxed"></div>
         </div>
     </section>
 
-    <!--
-    ══════════════════════════════════════════════════════════════════
-    TAB 3 — RESUME TAILOR
-    Two-step: AI identifies gaps → user fills context → AI rewrites resume.
-    ══════════════════════════════════════════════════════════════════
-    -->
+    <!-- Tab 3: Resume Tailoring -->
     <section id="tailor" class="tab-content bg-gray-100 p-6 rounded shadow border border-black">
-        <h2 class="text-2xl font-bold mb-4">Resume Tailoring & Optimization</h2>
-        <p class="mb-4 text-sm font-bold">The AI will analyze your resume against the job description and ask you clarifying questions to extract missing experience before generating a final resume.</p>
-        
+        <h2 class="text-2xl font-bold mb-1">Resume Tailoring & Optimization</h2>
+        <p class="mb-4 text-sm">AI rewrites your resume specifically for the job description â€” matching keywords, restructuring bullets, surfacing relevant achievements, and eliminating what doesn't fit.</p>
+
         <div class="space-y-4">
             <div>
-                <label class="block font-bold mb-1">Current Resume (Paste Text):</label>
-                <textarea id="tailorResume" rows="4" class="w-full p-2 border border-black rounded bg-gray-50"></textarea>
+                <label class="block font-bold mb-1">Your Resume:</label>
+                <textarea id="tailorResume" rows="5" class="w-full p-2 border border-black rounded bg-gray-50" placeholder="Paste your full resume here..."></textarea>
             </div>
             <div>
                 <label class="block font-bold mb-1">Target Job Description:</label>
-                <textarea id="tailorJob" rows="4" class="w-full p-2 border border-black rounded bg-gray-50"></textarea>
+                <textarea id="tailorJob" rows="5" class="w-full p-2 border border-black rounded bg-gray-50" placeholder="Paste the full job description here..."></textarea>
             </div>
-            <button onclick="analyzeResumeGaps()" class="w-full bg-yellow-300 hover:bg-yellow-400 border border-black font-bold py-3 rounded">Step 1: Analyze Gaps</button>
-            <div id="tailorLoading" class="loading mt-2 font-bold">Analyzing resume with cascading models... please wait.</div>
+
+            <!-- Two paths: quick or deep -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="bg-yellow-50 border border-black rounded p-3">
+                    <p class="font-bold text-sm mb-1">âš¡ Quick Tailor</p>
+                    <p class="text-xs mb-3">AI directly rewrites resume to the JD â€” no questions, instant output.</p>
+                    <button onclick="quickTailorResume()" class="w-full bg-yellow-300 hover:bg-yellow-400 border border-black font-bold py-2 rounded text-sm">Tailor Now â†’</button>
+                </div>
+                <div class="bg-orange-50 border border-black rounded p-3">
+                    <p class="font-bold text-sm mb-1">ðŸ”¬ Deep Tailor (2-Step)</p>
+                    <p class="text-xs mb-3">AI identifies gaps, asks you questions to extract missing context, then rewrites.</p>
+                    <button onclick="analyzeResumeGaps()" class="w-full bg-orange-300 hover:bg-orange-400 border border-black font-bold py-2 rounded text-sm">Step 1: Analyze Gaps â†’</button>
+                </div>
+            </div>
+
+            <div id="tailorLoading" class="loading mt-2 font-bold">Analyzing with AI... please wait.</div>
         </div>
 
-        <!-- Follow-up Questions Container -->
-        <div id="tailorQuestionsContainer" class="mt-6 p-4 bg-orange-100 border border-black rounded hidden">
-            <h3 class="font-bold mb-2">AI Clarification Questions:</h3>
-            <p id="tailorAIQuestions" class="mb-4 font-bold whitespace-pre-wrap"></p>
-            <label class="block font-bold mb-1">Your Responses to the Above:</label>
-            <textarea id="tailorUserAnswers" rows="4" class="w-full p-2 border border-black rounded bg-gray-50 mb-4"></textarea>
-            <button onclick="generateFinalResume()" class="w-full bg-orange-300 hover:bg-orange-400 border border-black font-bold py-3 rounded">Step 2: Generate Tailored Resume</button>
-            <div id="tailorFinalLoading" class="loading mt-2 font-bold">Drafting final resume with cascading models... please wait.</div>
+        <!-- Deep Tailor: Follow-up Questions -->
+        <div id="tailorQuestionsContainer" class="mt-5 p-4 bg-orange-100 border border-black rounded hidden">
+            <h3 class="font-bold mb-1">AI Gap Questions â€” answer to improve the output:</h3>
+            <p id="tailorAIQuestions" class="mb-3 text-sm whitespace-pre-wrap leading-relaxed"></p>
+            <label class="block font-bold mb-1 text-sm">Your Answers:</label>
+            <textarea id="tailorUserAnswers" rows="5" class="w-full p-2 border border-black rounded bg-gray-50 mb-3 text-sm" placeholder="Answer each question above. The more specific, the better the output..."></textarea>
+            <button onclick="generateFinalResume()" class="w-full bg-orange-400 hover:bg-orange-500 border border-black font-bold py-2 rounded text-sm">Step 2: Generate Deep-Tailored Resume â†’</button>
+            <div id="tailorFinalLoading" class="loading mt-2 font-bold text-sm">Rewriting resume... please wait.</div>
         </div>
-        
-        <div id="tailorFinalOutput" class="mt-6 hidden">
-            <div class="flex justify-between items-center mb-1">
-                <span class="font-bold text-sm">Tailored Resume</span>
-                <button onclick="copyOutput('tailorFinalOutputContent')" class="text-xs border border-black px-2 py-1 rounded bg-gray-300 hover:bg-gray-400 font-bold">📋 Copy</button>
+
+        <!-- Output panel (shared by both paths) -->
+        <div id="tailorFinalOutput" class="mt-5 hidden">
+            <!-- Diff summary strip -->
+            <div id="tailorDiffStrip" class="bg-green-50 border border-black rounded p-3 mb-3 text-sm hidden">
+                <span class="font-bold">ðŸ“Š What changed: </span>
+                <span id="tailorDiffText"></span>
             </div>
-            <div id="tailorFinalOutputContent" class="p-4 bg-gray-200 border border-black rounded font-normal text-sm leading-relaxed whitespace-pre-wrap"></div>
+            <div class="flex justify-between items-center mb-1">
+                <span class="font-bold text-sm">âœ… Tailored Resume</span>
+                <div class="flex gap-2">
+                    <button onclick="tailorRefineFurther()" class="text-xs border border-black px-2 py-1 rounded bg-yellow-200 hover:bg-yellow-300 font-bold">ðŸ” Refine Further</button>
+                    <button onclick="copyOutput('tailorFinalOutputContent')" class="text-xs border border-black px-2 py-1 rounded bg-gray-300 hover:bg-gray-400 font-bold">ðŸ“‹ Copy</button>
+                </div>
+            </div>
+            <div id="tailorFinalOutputContent" class="p-4 bg-white border border-black rounded font-normal text-sm leading-relaxed whitespace-pre-wrap"></div>
         </div>
     </section>
 
-    <!--
-    ══════════════════════════════════════════════════════════════════
-    TAB 4 — INTERVIEW PREP
-    Generates company-specific behavioural + technical questions.
-    ══════════════════════════════════════════════════════════════════
-    -->
+    <!-- Tab 1: Interview Preparation -->
     <section id="prep" class="tab-content bg-gray-100 p-6 rounded shadow border border-black">
         <h2 class="text-2xl font-bold mb-4">Interview Preparation</h2>
         <p class="mb-4 text-sm font-bold">Provide your details to generate a custom interview guide.</p>
@@ -270,18 +233,13 @@ SECTION 3 — PAGE SHELL & HEADER
         <div id="prepOutput" class="mt-6 hidden">
             <div class="flex justify-between items-center mb-1">
                 <span class="font-bold text-sm">Result</span>
-                <button onclick="copyOutput('prepOutputContent')" class="text-xs border border-black px-2 py-1 rounded bg-gray-300 hover:bg-gray-400 font-bold">📋 Copy</button>
+                <button onclick="copyOutput('prepOutputContent')" class="text-xs border border-black px-2 py-1 rounded bg-gray-300 hover:bg-gray-400 font-bold">ðŸ“‹ Copy</button>
             </div>
             <div id="prepOutputContent" class="p-4 bg-gray-200 border border-black rounded font-normal text-sm leading-relaxed"></div>
         </div>
     </section>
 
-    <!--
-    ══════════════════════════════════════════════════════════════════
-    TAB 5 — IV MOCK & FEEDBACK
-    Question bank (persistent) + mic recording + AI confidence scoring.
-    ══════════════════════════════════════════════════════════════════
-    -->
+    <!-- Tab 2: Feedback Session & Audio Mock Interview -->
     <section id="feedback" class="tab-content bg-gray-100 p-6 rounded shadow border border-black">
         <h2 class="text-2xl font-bold mb-4">Feedback Session, Mock & Confidence Check</h2>
         <p class="mb-4 text-sm font-bold">Paste the questions you were asked, record your answer, and get AI feedback to improve your content and confidence level.</p>
@@ -294,7 +252,7 @@ SECTION 3 — PAGE SHELL & HEADER
             <div>
                 <label class="block font-bold mb-1">Your Answer:</label>
                 <div class="flex gap-2 mb-2">
-                    <button id="micBtn" onclick="toggleAudioRecording()" class="bg-red-300 hover:bg-red-400 border border-black font-bold py-2 px-4 rounded flex-1">🎤 Start Audio Recording</button>
+                    <button id="micBtn" onclick="toggleAudioRecording()" class="bg-red-300 hover:bg-red-400 border border-black font-bold py-2 px-4 rounded flex-1">ðŸŽ¤ Start Audio Recording</button>
                 </div>
                 <div id="interimPreview" class="w-full p-2 border border-dashed border-gray-400 rounded bg-gray-50 text-gray-500 italic text-sm min-h-[2rem] hidden">Live preview will appear here...</div>
                 <textarea id="feedbackAnswer" rows="5" class="w-full p-2 border border-black rounded bg-gray-50 mt-2" placeholder="Type your answer here or use the microphone to speak..."></textarea>
@@ -306,18 +264,13 @@ SECTION 3 — PAGE SHELL & HEADER
         <div id="feedbackOutput" class="mt-6 hidden">
             <div class="flex justify-between items-center mb-1">
                 <span class="font-bold text-sm">Result</span>
-                <button onclick="copyOutput('feedbackOutputContent')" class="text-xs border border-black px-2 py-1 rounded bg-gray-300 hover:bg-gray-400 font-bold">📋 Copy</button>
+                <button onclick="copyOutput('feedbackOutputContent')" class="text-xs border border-black px-2 py-1 rounded bg-gray-300 hover:bg-gray-400 font-bold">ðŸ“‹ Copy</button>
             </div>
             <div id="feedbackOutputContent" class="p-4 bg-gray-200 border border-black rounded font-normal text-sm leading-relaxed"></div>
         </div>
     </section>
 
-    <!--
-    ══════════════════════════════════════════════════════════════════
-    TAB 6 — RESUME GRILLING
-    Adversarial stress-test questions, weighted to most recent role.
-    ══════════════════════════════════════════════════════════════════
-    -->
+    <!-- Tab 4: Resume Grilling -->
     <section id="grilling" class="tab-content bg-gray-100 p-6 rounded shadow border border-black">
         <h2 class="text-2xl font-bold mb-4">Resume Grilling (Stress Test)</h2>
         <p class="mb-4 text-sm font-bold">The AI will heavily scrutinize your current/most recent job and ask tough, probing questions across the rest of the resume to prepare you for the worst-case scenario.</p>
@@ -327,11 +280,11 @@ SECTION 3 — PAGE SHELL & HEADER
                 <div class="flex items-center justify-between mb-1">
                     <label class="font-bold">Resume to Grill:</label>
                     <div class="flex gap-2">
-                        <button onclick="grillUseSource('master')" class="text-xs border border-black px-2 py-1 rounded bg-blue-100 hover:bg-blue-200 font-bold">📄 Use Master Resume</button>
-                        <button onclick="grillUseSource('tailor')" class="text-xs border border-black px-2 py-1 rounded bg-yellow-100 hover:bg-yellow-200 font-bold">✂️ Use Tailor Resume</button>
+                        <button onclick="grillUseSource('master')" class="text-xs border border-black px-2 py-1 rounded bg-blue-100 hover:bg-blue-200 font-bold">ðŸ“„ Use Master Resume</button>
+                        <button onclick="grillUseSource('tailor')" class="text-xs border border-black px-2 py-1 rounded bg-yellow-100 hover:bg-yellow-200 font-bold">âœ‚ï¸ Use Tailor Resume</button>
                     </div>
                 </div>
-                <textarea id="grillingResume" rows="8" class="w-full p-2 border border-black rounded bg-gray-50" placeholder="Auto-filled from Master Resume or Tailor Resume — or paste manually..."></textarea>
+                <textarea id="grillingResume" rows="8" class="w-full p-2 border border-black rounded bg-gray-50" placeholder="Auto-filled from Master Resume or Tailor Resume â€” or paste manually..."></textarea>
             </div>
             <button onclick="grillResume()" class="w-full bg-red-300 hover:bg-red-400 border border-black font-bold py-3 rounded">Grill My Resume</button>
             <div id="grillingLoading" class="loading mt-2 font-bold">Scrutinizing resume with cascading models... please wait.</div>
@@ -340,41 +293,46 @@ SECTION 3 — PAGE SHELL & HEADER
         <div id="grillingOutput" class="mt-6 hidden">
             <div class="flex justify-between items-center mb-1">
                 <span class="font-bold text-sm">Result</span>
-                <button onclick="copyOutput('grillingOutputContent')" class="text-xs border border-black px-2 py-1 rounded bg-gray-300 hover:bg-gray-400 font-bold">📋 Copy</button>
+                <button onclick="copyOutput('grillingOutputContent')" class="text-xs border border-black px-2 py-1 rounded bg-gray-300 hover:bg-gray-400 font-bold">ðŸ“‹ Copy</button>
             </div>
             <div id="grillingOutputContent" class="p-4 bg-gray-200 border border-black rounded font-normal text-sm leading-relaxed"></div>
         </div>
-    </section>
-
-    <!--
-    ══════════════════════════════════════════════════════════════════
-    TAB 7 — IV VIDEOS
-    Curated YouTube interview guides; lazy-loads thumbnails on expand.
-    ══════════════════════════════════════════════════════════════════
-    -->
+    </section>    <!-- Interview Videos Tab -->
     <section id="videos" class="tab-content bg-gray-100 p-6 rounded shadow border border-black">
-        <h2 class="text-2xl font-bold mb-2">🎥 Interview Videos</h2>
-        <p class="mb-4 text-sm font-bold">Curated YouTube playlists and channels for interview prep, HR rounds, resume tips, and salary negotiation.</p>
+        <h2 class="text-2xl font-bold mb-2">ðŸŽ¥ Interview Videos</h2>
+        <p class="mb-2 text-sm font-bold">Curated YouTube playlists and channels for interview prep, HR rounds, resume tips, and salary negotiation.</p>
+        <p class="mb-4 text-xs" style="background:#1a1a1a;color:#f0e6d0;padding:8px 12px;border-radius:4px;">âš¡ Tap <b>âš¡ Analyse</b> on any video â€” AI will summarise the content, interview type, key lessons &amp; exact steps to apply. Use Thunder âš¡ to probe further.</p>
         <div id="video-channels-iv"></div>
     </section>
 
-    <!--
-    ══════════════════════════════════════════════════════════════════
-    TAB 8 — DAILY AI COACH
-    Multi-turn coaching session + persistent skills bank extraction.
-    ══════════════════════════════════════════════════════════════════
-    -->
+    <!-- Player Overlay (shared) -->
+    <div id="iv-player-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;display:none;flex-direction:column;">
+        <div style="display:flex;align-items:center;padding:10px 14px;background:#2d2d2d;border-bottom:3px solid #000;gap:10px;flex-shrink:0;">
+            <button onclick="IVPlayer.close()" style="background:#000;border:none;color:#fff;padding:7px 14px;font-size:15px;font-weight:900;cursor:pointer;border-radius:3px;text-transform:uppercase;letter-spacing:.06em;flex-shrink:0;">âœ• Close</button>
+            <span id="iv-p-title" style="font-size:15px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f0e6d0;font-weight:700;"></span>
+            <a id="iv-p-yt-link" href="#" target="_blank" rel="noopener noreferrer" style="background:#1a1a1a;border:1px solid #555;color:#f0e6d0;font-size:12px;padding:5px 9px;cursor:pointer;border-radius:3px;text-decoration:none;text-transform:uppercase;letter-spacing:.07em;flex-shrink:0;">â†— YouTube</a>
+        </div>
+        <div style="position:relative;width:100%;padding-bottom:56.25%;background:#000;flex-shrink:0;">
+            <iframe id="iv-player-iframe" style="position:absolute;inset:0;width:100%;height:100%;border:none;" allow="autoplay; fullscreen; encrypted-media" allowfullscreen></iframe>
+        </div>
+        <div style="padding:14px 16px;overflow-y:auto;flex:1;background:#1e1e1e;">
+            <div id="iv-p-info-title" style="font-size:20px;font-weight:900;color:#f0e6d0;margin-bottom:6px;line-height:1.35;"></div>
+            <div id="iv-p-info-meta" style="font-size:12px;color:#9e7a52;text-transform:uppercase;letter-spacing:.1em;"></div>
+        </div>
+    </div>
+
+    <!-- Daily AI Coach Tab -->
     <section id="coach" class="tab-content bg-gray-100 p-6 rounded shadow border border-black">
-        <h2 class="text-2xl font-bold mb-1">🧠 Daily AI Coach</h2>
+        <h2 class="text-2xl font-bold mb-1">ðŸ§  Daily AI Coach</h2>
         <p class="mb-4 text-sm">Log what you worked on today. The AI will probe deeper, identify skill gaps, train you, and build your resume-ready skills list over time.</p>
 
         <!-- Skills Memory Panel -->
         <div class="bg-gray-200 border border-black rounded p-3 mb-4">
             <div class="flex items-center justify-between mb-2">
-                <span class="font-bold text-sm">📊 Skill Memory Bank</span>
+                <span class="font-bold text-sm">ðŸ“Š Skill Memory Bank</span>
                 <div class="flex gap-2">
-                    <button onclick="Coach.exportSkills()" class="text-xs border border-black px-2 py-1 rounded bg-gray-300 hover:bg-gray-400 font-bold">📋 Copy for Resume</button>
-                    <button onclick="Coach.clearSkills()" class="text-xs border border-black px-2 py-1 rounded bg-red-200 hover:bg-red-300 font-bold">🗑 Clear All</button>
+                    <button onclick="Coach.exportSkills()" class="text-xs border border-black px-2 py-1 rounded bg-gray-300 hover:bg-gray-400 font-bold">ðŸ“‹ Copy for Resume</button>
+                    <button onclick="Coach.clearSkills()" class="text-xs border border-black px-2 py-1 rounded bg-red-200 hover:bg-red-300 font-bold">ðŸ—‘ Clear All</button>
                 </div>
             </div>
             <div id="coach-skills-list" class="flex flex-wrap gap-2 min-h-[2rem]">
@@ -389,7 +347,7 @@ SECTION 3 — PAGE SHELL & HEADER
                 <!-- Seeded welcome message -->
                 <div class="coach-msg ai">
                     <div class="inline-block bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-sm max-w-[85%]">
-                        <strong>AI Coach:</strong> Hello! I'm your Daily AI Coach. Tell me what you worked on or accomplished today — a task, a meeting, a problem you solved, a target you hit. Anything counts! I'll ask follow-up questions, spot your skill gaps, and help build your resume profile.
+                        <strong>AI Coach:</strong> Hello! I'm your Daily AI Coach. Tell me what you worked on or accomplished today â€” a task, a meeting, a problem you solved, a target you hit. Anything counts! I'll ask follow-up questions, spot your skill gaps, and help build your resume profile.
                     </div>
                 </div>
             </div>
@@ -408,12 +366,7 @@ SECTION 3 — PAGE SHELL & HEADER
         </div>
     </section>
 
-    <!--
-    ══════════════════════════════════════════════════════════════════
-    TAB 9 — API SETTINGS
-    Stores up to 2 Gemini keys in localStorage for rotation.
-    ══════════════════════════════════════════════════════════════════
-    -->
+    <!-- Tab 0: API Settings -->
     <section id="api-settings" class="tab-content bg-gray-100 p-6 rounded shadow border border-black">
         <h2 class="text-2xl font-bold mb-4">Gemini API Configuration</h2>
         <div class="space-y-4">
@@ -433,733 +386,620 @@ SECTION 3 — PAGE SHELL & HEADER
         </div>
     </section>
 
-    <!-- IV Player Overlay (shared fullscreen YouTube embed, z-index 9999) -->
-    <!-- Player Overlay (shared) -->
-    <div id="iv-player-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;display:none;flex-direction:column;">
-        <div style="display:flex;align-items:center;padding:10px 14px;background:#2d2d2d;border-bottom:3px solid #000;gap:10px;flex-shrink:0;">
-            <button onclick="IVPlayer.close()" style="background:#000;border:none;color:#fff;padding:7px 14px;font-size:15px;font-weight:900;cursor:pointer;border-radius:3px;text-transform:uppercase;letter-spacing:.06em;flex-shrink:0;">✕ Close</button>
-            <span id="iv-p-title" style="font-size:15px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f0e6d0;font-weight:700;"></span>
-            <a id="iv-p-yt-link" href="#" target="_blank" rel="noopener noreferrer" style="background:#1a1a1a;border:1px solid #555;color:#f0e6d0;font-size:12px;padding:5px 9px;cursor:pointer;border-radius:3px;text-decoration:none;text-transform:uppercase;letter-spacing:.07em;flex-shrink:0;">↗ YouTube</a>
-        </div>
-        <div style="position:relative;width:100%;padding-bottom:56.25%;background:#000;flex-shrink:0;">
-            <iframe id="iv-player-iframe" style="position:absolute;inset:0;width:100%;height:100%;border:none;" allow="autoplay; fullscreen; encrypted-media" allowfullscreen></iframe>
-        </div>
-        <div style="padding:14px 16px;overflow-y:auto;flex:1;background:#1e1e1e;">
-            <div id="iv-p-info-title" style="font-size:20px;font-weight:900;color:#f0e6d0;margin-bottom:6px;line-height:1.35;"></div>
-            <div id="iv-p-info-meta" style="font-size:12px;color:#9e7a52;text-transform:uppercase;letter-spacing:.1em;"></div>
-        </div>
-    </div>
 
 
-
-    <!--
-    ══════════════════════════════════════════════════════════════════
-    SECTION 5 — THUNDER: FLOATING QUICK-ASK BUTTON & CHAT OVERLAY
-    Visible on every tab. Renders fixed bottom-right.
-    z-index 8000–8002 to sit above all tab content.
-    ══════════════════════════════════════════════════════════════════
-    -->
-
-    <!-- ⚡ Trigger button -->
-    <button id="thunder-btn" onclick="Thunder.toggle()" title="Quick AI Assistant"
-        style="position:fixed;bottom:24px;right:24px;z-index:8000;
-               width:56px;height:56px;border-radius:50%;
-               background:#1a1a1a;border:3px solid #f0e6d0;
-               color:#f0e6d0;font-size:26px;cursor:pointer;
-               box-shadow:0 4px 20px rgba(0,0,0,0.45);
-               display:flex;align-items:center;justify-content:center;
-               transition:transform .2s,box-shadow .2s;"
-        onmouseover="this.style.transform='scale(1.12)';this.style.boxShadow='0 6px 28px rgba(0,0,0,0.6)'"
-        onmouseout="this.style.transform='';this.style.boxShadow='0 4px 20px rgba(0,0,0,0.45)'">
-        &#9889;
-    </button>
-
-    <!-- Notification dot (shown when chat has unread AI reply) -->
-    <div id="thunder-badge"
-        style="position:fixed;bottom:72px;right:24px;z-index:8001;
-               background:#ef4444;color:#fff;border-radius:999px;
-               font-size:10px;font-weight:900;padding:2px 7px;
-               display:none;pointer-events:none;">AI</div>
-
-    <!-- Chat panel (slide-up overlay) -->
-    <div id="thunder-overlay"
-        style="position:fixed;bottom:90px;right:24px;z-index:8002;
-               width:370px;max-width:calc(100vw - 32px);
-               background:#fff;border:2px solid #1a1a1a;border-radius:12px;
-               box-shadow:0 8px 40px rgba(0,0,0,0.35);
-               display:none;flex-direction:column;overflow:hidden;max-height:520px;">
-
-        <!-- Panel header -->
-        <div style="background:#1a1a1a;color:#f0e6d0;padding:10px 14px;
-                    display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-            <span style="font-weight:900;font-size:15px;">&#9889; AI Quick Assistant</span>
-            <button onclick="Thunder.toggle()"
-                style="background:none;border:none;color:#f0e6d0;font-size:18px;cursor:pointer;line-height:1;">&times;</button>
-        </div>
-
-        <!-- Message stream -->
-        <div id="thunder-messages"
-            style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;
-                   gap:8px;min-height:200px;max-height:320px;background:#fafaf9;">
-            <div class="tmsg ai">
-                <div class="tbubble ai">Hi! I&#39;m your quick AI assistant. Ask me anything about interviews, resumes, salary negotiation, or career advice.</div>
-            </div>
-        </div>
-
-        <!-- Typing indicator -->
-        <div id="thunder-typing"
-            style="display:none;padding:4px 12px;font-size:11px;color:#9ca3af;font-style:italic;flex-shrink:0;">
-            AI is thinking...
-        </div>
-
-        <!-- Input bar -->
-        <div style="border-top:1px solid #e5e7eb;padding:10px;display:flex;gap:8px;flex-shrink:0;background:#fff;">
-            <input id="thunder-input" type="text" placeholder="Ask anything..."
-                style="flex:1;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;outline:none;"
-                onkeydown="if(event.key==='Enter') Thunder.send()">
-            <button onclick="Thunder.send()"
-                style="background:#1a1a1a;color:#f0e6d0;border:none;padding:8px 14px;
-                       border-radius:6px;font-weight:900;font-size:13px;cursor:pointer;">&#9658;</button>
-        </div>
-    </div>
-
-    <!--
-    ══════════════════════════════════════════════════════════════════
-    SECTION 6 — JAVASCRIPT
-    Organised into clearly labelled modules.
-
-    EXECUTION ORDER ON PAGE LOAD:
-      1. CONFIG constants are set immediately
-      2. window.addEventListener('load') handlers fire after DOM ready:
-         – Restores API keys from localStorage
-         – Syncs Master Resume to all tab textareas
-         – Wires Ctrl+Enter on the Coach textarea
-         – Builds the IV Video accordion
-         – Restores Coach skills + conversation history
-      3. All feature functions are available globally for onclick= handlers
-
-    DEBUGGING TIPS:
-      • Open DevTools → Console
-      • All Gemini calls log: [Cascade] Trying Model: ... | Key: ...XXXX
-      • Key exhaustion logs: [Cascade] Key exhausted (quota full): ...XXXX
-      • All async functions use try/finally so loading spinners always hide
-    ══════════════════════════════════════════════════════════════════
-    -->
+    <!-- JavaScript Logic -->
     <script>
+        // --- 1. System Settings, Key Permanent Storage & Rotation ---
+        const API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
+        const MODEL_CASCADE = [
+            "gemini-2.5-pro",
+            "gemini-3.5-flash",
+            "gemini-3.1-flash-lite",
+            "gemini-3-flash",
+            "gemini-2.5-flash"
+        ];
+        
+        window.addEventListener('load', () => {
+            const savedKeys = JSON.parse(localStorage.getItem('gemini_api_keys') || '[]');
+            _cachedKeys = savedKeys;
+            _cachedKeyIndex = parseInt(localStorage.getItem('gemini_key_rotation_index') || '0', 10);
+            if (savedKeys[0]) document.getElementById('apiKey1').value = savedKeys[0];
+            if (savedKeys[1]) document.getElementById('apiKey2').value = savedKeys[1];
+        });
 
-    // ┌─────────────────────────────────────────────────────────────────┐
-    // │ A. GLOBAL CONFIGURATION                                         │
-    // │    Change model order here to alter cascade priority.           │
-    // │    Add more entries to MODEL_CASCADE to extend the fallback.    │
-    // └─────────────────────────────────────────────────────────────────┘
+        function saveApiKeys() {
+            const key1 = document.getElementById('apiKey1').value.trim();
+            const key2 = document.getElementById('apiKey2').value.trim();
+            const keysArray = [key1, key2].filter(k => k !== '');
+            
+            if (keysArray.length === 0) {
+                alert("Please enter at least one API key.");
+                return;
+            }
+            
+            localStorage.setItem('gemini_api_keys', JSON.stringify(keysArray));
+            _cachedKeys = keysArray;
+            if (!localStorage.getItem('gemini_key_rotation_index')) {
+                localStorage.setItem('gemini_key_rotation_index', '0');
+                _cachedKeyIndex = 0;
+            }
+            alert("Keys saved!");
+        }
 
-    const API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/';
+        // In-memory key cache for performance
+        let _cachedKeys = [];
+        let _cachedKeyIndex = 0;
 
-    // Models are tried in ORDER. If a model fails or quota is hit on all keys,
-    // the engine automatically moves to the next model in this list.
-    const MODEL_CASCADE = [
-        'gemini-2.5-pro',       // 1st choice: most capable
-        'gemini-3.5-flash',     // 2nd: fast + smart
-        'gemini-3.1-flash-lite',// 3rd
-        'gemini-3-flash',       // 4th
-        'gemini-2.5-flash',     // 5th: final fallback
-    ];
-
-    const MAX_INPUT_CHARS = 20000; // warn user if combined prompt input exceeds this
-
-
-    // ┌─────────────────────────────────────────────────────────────────┐
-    // │ B. API KEY MANAGEMENT                                           │
-    // │    In-memory cache (_cachedKeys) is the runtime source.        │
-    // │    localStorage is only read on page load and written on save. │
-    // │    _exhaustedKeys tracks 429/403 failures per session;         │
-    // │    auto-clears after 10 min (Gemini quota window).             │
-    // └─────────────────────────────────────────────────────────────────┘
-
-    let _cachedKeys    = [];    // runtime key array  (max 2 keys)
-    let _cachedKeyIndex = 0;   // round-robin pointer
-    const _exhaustedKeys = new Set(); // keys that hit quota this session
-
-    /** Persist key rotation pointer so it survives page refresh. */
-    function _saveRotationIndex() {
-        localStorage.setItem('gemini_key_rotation_index', _cachedKeyIndex.toString());
-    }
-
-    /**
-     * Returns the next non-exhausted key in round-robin order.
-     * Returns null when ALL keys are currently exhausted for a given model
-     * (caller should then move to the next model in the cascade).
-     */
-    function getAvailableKey() {
-        const total = _cachedKeys.length;
-        for (let i = 0; i < total; i++) {
+        function getRotatedKey() {
+            if (_cachedKeys.length === 0) return null;
             const key = _cachedKeys[_cachedKeyIndex];
-            _cachedKeyIndex = (_cachedKeyIndex + 1) % total;
-            _saveRotationIndex();
-            if (!_exhaustedKeys.has(key)) return key;
-        }
-        return null; // all keys exhausted for this model
-    }
-
-    /**
-     * Marks a key as quota-exhausted and auto-recovers after 10 minutes.
-     * Called when API returns HTTP 429 (rate limit) or 403 (quota exceeded).
-     */
-    function markKeyExhausted(key) {
-        _exhaustedKeys.add(key);
-        console.warn('[Cascade] Key exhausted (quota full):', '...' + key.slice(-4));
-        setTimeout(() => _exhaustedKeys.delete(key), 10 * 60 * 1000); // auto-recover in 10 min
-    }
-
-    /** Reads keys from UI inputs, validates, persists, and refreshes cache. */
-    function saveApiKeys() {
-        const key1 = (document.getElementById('apiKey1').value || '').trim();
-        const key2 = (document.getElementById('apiKey2').value || '').trim();
-        const keysArray = [key1, key2].filter(k => k !== '');
-
-        if (keysArray.length === 0) {
-            alert('Please enter at least one API key.'); return;
+            _cachedKeyIndex = (_cachedKeyIndex + 1) % _cachedKeys.length;
+            localStorage.setItem('gemini_key_rotation_index', _cachedKeyIndex.toString());
+            return key;
         }
 
-        localStorage.setItem('gemini_api_keys', JSON.stringify(keysArray));
-        _cachedKeys = keysArray;
-
-        // Only reset rotation index on first-ever save (preserve ongoing rotation)
-        if (!localStorage.getItem('gemini_key_rotation_index')) {
-            _cachedKeyIndex = 0;
-            _saveRotationIndex();
+        // Key status tracker: marks a key as quota-exhausted for this session
+        const _exhaustedKeys = new Set();
+        function getAvailableKey() {
+            const total = _cachedKeys.length;
+            for (let i = 0; i < total; i++) {
+                const key = _cachedKeys[_cachedKeyIndex];
+                _cachedKeyIndex = (_cachedKeyIndex + 1) % total;
+                if (!_exhaustedKeys.has(key)) return key;
+            }
+            return null; // all keys exhausted for this model
         }
-        alert('Keys saved!');
-    }
+        function markKeyExhausted(key) {
+            _exhaustedKeys.add(key);
+            console.warn('[Cascade] Key exhausted (quota full):', '...' + key.slice(-4));
+            // Reset exhaustion after 10 minutes (quota windows often reset)
+            setTimeout(() => { _exhaustedKeys.delete(key); }, 10 * 60 * 1000);
+        }
 
+        // Semantically correct Tab Switch Engine
+        function switchTab(tabId) {
+            // Hide all tab content panes
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            
+            // Reset all tab buttons to inactive state
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('tab-active', 'bg-gray-100');
+                el.classList.add('bg-gray-300');
+                el.setAttribute('aria-selected', 'false');
+            });
+            
+            // Display targeted tab content pane
+            document.getElementById(tabId).classList.add('active');
+            
+            // Elevate targeted tab button to active look
+            const targetBtn = document.getElementById(`btn-${tabId}`);
+            if (targetBtn) {
+                targetBtn.classList.remove('bg-gray-300');
+                targetBtn.classList.add('tab-active', 'bg-gray-100');
+                targetBtn.setAttribute('aria-selected', 'true');
+            }
+        }
 
-    // ┌─────────────────────────────────────────────────────────────────┐
-    // │ C. CORE GEMINI CASCADE ENGINE                                   │
-    // │    All tab features call callGemini() – do not bypass it.      │
-    // │    Flow:  for each model → for each non-exhausted key →        │
-    // │           POST → success: return text                          │
-    // │                → 429/403: markKeyExhausted, try next key       │
-    // │                → other error: break to next model              │
-    // │                → network error: try next key                   │
-    // └─────────────────────────────────────────────────────────────────┘
+        // --- 2. Advanced Gemini API Cascade Engine ---
+        async function callGemini(systemInstruction, userPrompt) {
+            const keys = _cachedKeys;
+            if (keys.length === 0) {
+                alert("Please store your Gemini API Keys under the 'API Settings' tab first.");
+                return null;
+            }
 
-    /**
-     * @param {string} systemInstruction  - Role/persona for the model
-     * @param {string} userPrompt         - The actual task or question
-     * @returns {Promise<string|null>}    - Model response text, or null on total failure
-     */
-    async function callGemini(systemInstruction, userPrompt) {
-        if (_cachedKeys.length === 0) {
-            alert("No API keys found. Please add your Gemini key in the ⚙️ API Settings tab.");
+            const payload = {
+                systemInstruction: { parts: [{ text: systemInstruction }] },
+                contents: [{ parts: [{ text: userPrompt }] }],
+                generationConfig: { temperature: 0.3 }
+            };
+
+            // Model Cascade Engine
+            for (let m = 0; m < MODEL_CASCADE.length; m++) {
+                const modelName = MODEL_CASCADE[m];
+                
+                // Key Retry Loop: try every non-exhausted key before escalating model
+                for (let k = 0; k < keys.length; k++) {
+                    const apiKey = getAvailableKey();
+                    if (!apiKey) { console.warn(`[Cascade] All keys exhausted for ${modelName}. Moving to next model.`); break; }
+                    const endpoint = `${API_BASE_URL}${modelName}:generateContent?key=${apiKey}`;
+
+                    try {
+                        console.log(`[Cascade] Trying Model: ${modelName} | Key: ...${apiKey.slice(-4)}`);
+
+                        const response = await fetch(endpoint, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                            if (text) return text;
+                            console.warn(`[Cascade] Model ${modelName} returned empty/filtered. Trying next model.`);
+                            break;
+                        } else if (response.status === 429 || response.status === 403) {
+                            markKeyExhausted(apiKey);
+                            continue; // try next key on same model
+                        } else {
+                            console.warn(`[Cascade] Model ${modelName} error ${response.status}. Trying next model.`);
+                            break;
+                        }
+                    } catch (error) {
+                        console.warn(`[Cascade] Network error on ${modelName} key ...${apiKey.slice(-4)}.`, error);
+                        continue;
+                    }
+                }
+            }
+
+            alert("Critical Error: All models in the cascade failed, or all keys exhausted their quotas. Please check your network and API usage limits.");
             return null;
         }
 
-        const payload = {
-            systemInstruction: { parts: [{ text: systemInstruction }] },
-            contents:          [{ parts: [{ text: userPrompt }] }],
-            generationConfig:  { temperature: 0.3 }
-        };
+        // --- Job Hunt Strategy Feature (Optimized for LinkedIn & Naukri.com) ---
+        async function generateJobHuntStrategy() {
+            const resume = document.getElementById('huntResume').value;
+            const location = document.getElementById('huntLocation').value;
+            const availability = document.getElementById('huntAvailability').value;
+            
+            if (!resume || !location) return alert("Resume and Target Location are required.");
+            if (!warnIfTooLong(resume, location, availability)) return;
 
-        for (const modelName of MODEL_CASCADE) {
-            for (let k = 0; k < _cachedKeys.length; k++) {
-                const apiKey = getAvailableKey();
-                if (!apiKey) {
-                    console.warn(`[Cascade] All keys exhausted for ${modelName}. Escalating...`);
-                    break; // move to next model
+            document.getElementById('huntLoading').classList.add('active');
+            document.getElementById('huntOutput').classList.add('hidden');
+
+            try {
+                const sysInstruct = "You are an elite talent acquisition headhunter and India job market strategist expert in LinkedIn and Naukri.com directory systems.";
+                const prompt = `Analyze the following candidate profile to generate a comprehensive strategy optimized specifically for LinkedIn and Naukri.com.\n\n${safeWrap('resume', resume)}\n${safeWrap('target_location', location)}\n${safeWrap('availability', availability)}\n\nPlease generate a highly tactical report detailing:\n\n1. **Naukri.com Optimization Blueprint**:\n- **Target Functional Area & Keywords**: Exact high-traffic keywords to include in the Resume Headline and Key Skills sections to maximize recruiter views on Naukri.\n- **Custom Naukri Profile Headline**: Provide 2 variations of impactful headlines within the character limits.\n\n2. **LinkedIn Profile & Search Masterplan**:\n- **Boolean Search Strings**: Provide precise Boolean search queries (using AND, OR, NOT) that the user can copy/paste directly into LinkedIn Search to discover unadvertised jobs.\n- **Profile Tagline & About Summary Advice**: Tailor keyword placements to help them rank in LinkedIn Recruiter searches.\n\n3. **Target Corporate Hit List (${location})**:\n- List 5-10 major companies, startups, or multinationals operating directly in or around ${location} that actively hire for this candidate's profile via LinkedIn and Naukri.\n\n4. **Outreach Scripts**: Provide a short, high-conversion template for cold-messaging hiring managers or recruiters on LinkedIn.`;
+
+                const result = await callGemini(sysInstruct, prompt);
+                
+                if (result) {
+                    const outputDiv = document.getElementById('huntOutput');
+                    document.getElementById('huntOutputContent').innerHTML = '<p class="mt-3">' + renderMarkdown(result) + '</p>';
+                    outputDiv.classList.remove('hidden');
                 }
-
-                const endpoint = `${API_BASE_URL}${modelName}:generateContent?key=${apiKey}`;
-                console.log(`[Cascade] Trying Model: ${modelName} | Key: ...${apiKey.slice(-4)}`);
-
-                try {
-                    const response = await fetch(endpoint, {
-                        method:  'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body:    JSON.stringify(payload)
-                    });
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-                        if (text) return text; // ✓ success
-                        console.warn(`[Cascade] ${modelName} returned empty/filtered response.`);
-                        break; // try next model
-                    }
-
-                    if (response.status === 429 || response.status === 403) {
-                        markKeyExhausted(apiKey);
-                        continue; // try next key on SAME model
-                    }
-
-                    console.warn(`[Cascade] ${modelName} HTTP ${response.status}. Escalating...`);
-                    break; // non-quota error → try next model
-
-                } catch (networkError) {
-                    console.warn(`[Cascade] Network error on ${modelName} ...${apiKey.slice(-4)}.`, networkError);
-                    continue; // network flake → retry with next key
-                }
+            } finally {
+                hideLoading('huntLoading');
             }
         }
 
-        alert('All models failed or all key quotas exhausted. Please check your API keys and network.');
-        return null;
-    }
+        // --- 3. Interview Preparation Feature ---
+        async function generatePrep() {
+            const resume = document.getElementById('prepResume').value;
+            const job = document.getElementById('prepJob').value;
+            const company = document.getElementById('prepCompany').value;
+            
+            if (!resume || !job) return alert("Resume and Job Description are required.");
+            if (!warnIfTooLong(resume, job, company)) return;
 
+            document.getElementById('prepLoading').classList.add('active');
+            document.getElementById('prepOutput').classList.add('hidden');
 
-    // ┌─────────────────────────────────────────────────────────────────┐
-    // │ D. SHARED UTILITY HELPERS                                       │
-    // └─────────────────────────────────────────────────────────────────┘
+            try {
+                const sysInstruct = "You are an expert technical and behavioral interview coach. Use formatting to make the guide clear and easy to read.";
+                const prompt = `Analyze this data to prepare the candidate.\n\n${safeWrap('company_profile', company)}\n${safeWrap('job_description', job)}\n${safeWrap('resume', resume)}\n\nGenerate: 1. A summary of what the company values based on the data. 2. Five tailored behavioral questions with advice on how the candidate should answer based on their resume. 3. Three technical/role-specific questions.`;
 
-    /**
-     * Lightweight Markdown → HTML renderer.
-     * Handles bold, italic, headers (h1–h3), ordered/unordered lists, paragraphs.
-     * Always escapes raw HTML before applying markdown rules (XSS-safe).
-     */
-    function renderMarkdown(text) {
-        return text
-            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') // escape first
-            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.+?)\*/g,     '<em>$1</em>')
-            .replace(/^### (.+)$/gm,   '<h3 class="font-bold text-base mt-4 mb-1">$1</h3>')
-            .replace(/^## (.+)$/gm,    '<h2 class="font-bold text-lg mt-5 mb-2">$1</h2>')
-            .replace(/^# (.+)$/gm,     '<h1 class="font-bold text-xl mt-6 mb-2">$1</h1>')
-            .replace(/^\d+\. (.+)$/gm, '<li class="ml-4 list-decimal">$1</li>')
-            .replace(/^[-*] (.+)$/gm,  '<li class="ml-4 list-disc">$1</li>')
-            .replace(/\n{2,}/g,        '</p><p class="mt-3">')
-            .replace(/\n/g,            '<br>');
-    }
-
-    /**
-     * Copies the innerText of an element to clipboard.
-     * Falls back to execCommand for older browsers.
-     * @param {string} elementId - ID of the DOM element containing output
-     */
-    function copyOutput(elementId) {
-        const text = document.getElementById(elementId).innerText;
-        navigator.clipboard.writeText(text).then(() => {
-            alert('Copied to clipboard!');
-        }).catch(() => {
-            const ta = document.createElement('textarea');
-            ta.value = text;
-            document.body.appendChild(ta);
-            ta.select();
-            document.execCommand('copy');
-            document.body.removeChild(ta);
-            alert('Copied to clipboard!');
-        });
-    }
-
-    /**
-     * Warns user if total prompt length may exceed model context limits.
-     * @param {...string} values - All input strings that will be sent to the model
-     * @returns {boolean} - false if user cancels, true to proceed
-     */
-    function warnIfTooLong(...values) {
-        const total = values.reduce((sum, v) => sum + (v ? v.length : 0), 0);
-        if (total > MAX_INPUT_CHARS) {
-            return confirm(
-                `⚠️ Input is very long (${total.toLocaleString()} chars). ` +
-                `This may hit the model's context limit. Continue anyway?`
-            );
+                const result = await callGemini(sysInstruct, prompt);
+                
+                if (result) {
+                    document.getElementById('prepOutputContent').innerHTML = '<p class="mt-3">' + renderMarkdown(result) + '</p>';
+                    document.getElementById('prepOutput').classList.remove('hidden');
+                }
+            } finally {
+                hideLoading('prepLoading');
+            }
         }
-        return true;
-    }
 
-    /**
-     * Safely hides a loading indicator regardless of errors upstream.
-     * Always called from finally {} blocks so it never gets skipped.
-     * @param {string} id - Element ID of the .loading div
-     */
-    function hideLoading(id) {
-        const el = document.getElementById(id);
-        if (el) el.classList.remove('active');
-    }
-
-    /**
-     * Wraps user-supplied text in XML-style tags to prevent prompt injection.
-     * Tells the model "treat this as data, not instructions".
-     * @example safeWrap('resume', userText) → "<resume>\n...\n</resume>"
-     */
-    function safeWrap(label, value) {
-        return `<${label}>\n${value || ''}\n</${label}>`;
-    }
-
-
-    // ┌─────────────────────────────────────────────────────────────────┐
-    // │ E. TAB CONTROLLER                                               │
-    // └─────────────────────────────────────────────────────────────────┘
-
-    /**
-     * Shows the target tab and updates ARIA attributes.
-     * All tab content sections use class="tab-content" (hidden by default).
-     * The active one gets class="tab-content active".
-     * @param {string} tabId - The id attribute of the target <section>
-     */
-    function switchTab(tabId) {
-        // Deactivate all panels
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-
-        // Reset all tab buttons to inactive
-        document.querySelectorAll('.tab-btn').forEach(el => {
-            el.classList.remove('tab-active', 'bg-gray-100');
-            el.classList.add('bg-gray-300');
-            el.setAttribute('aria-selected', 'false');
-        });
-
-        // Activate the target panel
-        document.getElementById(tabId).classList.add('active');
-
-        // Activate the target button
-        const btn = document.getElementById(`btn-${tabId}`);
-        if (btn) {
-            btn.classList.remove('bg-gray-300');
-            btn.classList.add('tab-active', 'bg-gray-100');
-            btn.setAttribute('aria-selected', 'true');
+        // --- Helper: Simple Markdown Renderer (Fix 15/16) ---
+        function renderMarkdown(text) {
+            return text
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') // escape HTML first
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                .replace(/^### (.+)$/gm, '<h3 class="font-bold text-base mt-4 mb-1">$1</h3>')
+                .replace(/^## (.+)$/gm, '<h2 class="font-bold text-lg mt-5 mb-2">$1</h2>')
+                .replace(/^# (.+)$/gm, '<h1 class="font-bold text-xl mt-6 mb-2">$1</h1>')
+                .replace(/^\d+\. (.+)$/gm, '<li class="ml-4 list-decimal">$1</li>')
+                .replace(/^[-*] (.+)$/gm, '<li class="ml-4 list-disc">$1</li>')
+                .replace(/\n{2,}/g, '</p><p class="mt-3">')
+                .replace(/\n/g, '<br>');
         }
-    }
 
-
-    // ┌─────────────────────────────────────────────────────────────────┐
-    // │ F. MASTER RESUME SYNC                                           │
-    // │    Propagates master resume text to all tab-specific fields    │
-    // │    only when those fields are still empty (non-destructive).   │
-    // └─────────────────────────────────────────────────────────────────┘
-
-    (function initMasterResumeSync() {
-        const LINKED_FIELDS = ['huntResume', 'prepResume', 'tailorResume', 'grillingResume'];
-
-        function syncToTabs() {
-            const masterText = (document.getElementById('masterResume').value || '');
-            LINKED_FIELDS.forEach(id => {
-                const el = document.getElementById(id);
-                if (el && el.value.trim() === '') el.value = masterText;
+        // --- Helper: Copy Output to Clipboard (Fix 11) ---
+        function copyOutput(elementId) {
+            const el = document.getElementById(elementId);
+            const text = el.innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Copied to clipboard!");
+            }).catch(() => {
+                // Fallback for older browsers
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                alert("Copied to clipboard!");
             });
         }
 
+        // --- Helper: Token/length warning (Fix 12) ---
+        const MAX_CHARS = 20000;
+        function warnIfTooLong(...values) {
+            const total = values.reduce((sum, v) => sum + (v ? v.length : 0), 0);
+            if (total > MAX_CHARS) {
+                return confirm(`âš ï¸ Your combined input is very long (${total.toLocaleString()} characters). This may exceed the model's context limit and produce a truncated response. Continue anyway?`);
+            }
+            return true;
+        }
+
+        // --- Helper: Safe loading hide (Fix 13) ---
+        function hideLoading(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('active');
+        }
+
+        // --- Helper: Wrap user inputs to prevent prompt injection (Fix 20) ---
+        function safeWrap(label, value) {
+            return `<${label}>\n${value}\n</${label}>`;
+        }
+
+        // --- Master Resume Sync (Fix 14) ---
         document.addEventListener('DOMContentLoaded', () => {
-            const master = document.getElementById('masterResume');
-            if (master) {
-                master.addEventListener('input', syncToTabs);
-                master.addEventListener('blur',  syncToTabs);
-            }
+            const masterResume = document.getElementById('masterResume');
+            const linkedFields = ['huntResume', 'prepResume', 'tailorResume', 'grillingResume'];
+            masterResume.addEventListener('input', () => {
+                linkedFields.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el && el.value === '') el.value = masterResume.value;
+                });
+            });
+            // Also sync on blur for reliability
+            masterResume.addEventListener('blur', () => {
+                linkedFields.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el && el.value === '') el.value = masterResume.value;
+                });
+            });
         });
-    })();
 
-
-    // ┌─────────────────────────────────────────────────────────────────┐
-    // │ G. TAB 2 — JOB HUNT STRATEGY                                   │
-    // └─────────────────────────────────────────────────────────────────┘
-
-    async function generateJobHuntStrategy() {
-        const resume       = document.getElementById('huntResume').value;
-        const location     = document.getElementById('huntLocation').value;
-        const availability = document.getElementById('huntAvailability').value;
-
-        if (!resume || !location) return alert('Resume and Target Location are required.');
-        if (!warnIfTooLong(resume, location, availability)) return;
-
-        document.getElementById('huntLoading').classList.add('active');
-        document.getElementById('huntOutput').classList.add('hidden');
-
-        try {
-            const sys    = 'You are an elite talent acquisition headhunter and India job market strategist expert in LinkedIn and Naukri.com.';
-            const prompt = `Generate a comprehensive job hunt strategy for the candidate below.\n\n` +
-                safeWrap('resume', resume) + '\n' +
-                safeWrap('target_location', location) + '\n' +
-                safeWrap('availability', availability) +
-                `\n\nDeliver:\n` +
-                `1. **Naukri.com Blueprint** – top keywords, 2 custom headline variations.\n` +
-                `2. **LinkedIn Masterplan** – Boolean search strings, tagline advice.\n` +
-                `3. **Target Company Hit List (${location})** – 5–10 companies actively hiring for this profile.\n` +
-                `4. **Outreach Script** – high-conversion cold-message template.`;
-
-            const result = await callGemini(sys, prompt);
-            if (result) {
-                document.getElementById('huntOutputContent').innerHTML = '<p class="mt-3">' + renderMarkdown(result) + '</p>';
-                document.getElementById('huntOutput').classList.remove('hidden');
+        // --- Fix 3: Show interim speech transcript as live preview ---
+        function updateInterimPreview(text) {
+            const preview = document.getElementById('interimPreview');
+            if (text) {
+                preview.classList.remove('hidden');
+                preview.textContent = text;
+            } else {
+                preview.classList.add('hidden');
             }
-        } finally {
-            hideLoading('huntLoading');
         }
-    }
+        let recognition = null;
+        let isRecording = false;
 
-
-    // ┌─────────────────────────────────────────────────────────────────┐
-    // │ H. TAB 3 — RESUME TAILOR                                        │
-    // │    Step 1: analyzeResumeGaps() → AI asks clarifying questions  │
-    // │    Step 2: generateFinalResume() → AI rewrites with answers    │
-    // └─────────────────────────────────────────────────────────────────┘
-
-    async function analyzeResumeGaps() {
-        const resume = document.getElementById('tailorResume').value;
-        const job    = document.getElementById('tailorJob').value;
-
-        if (!resume || !job) return alert('Both Resume and Job Description are required.');
-        if (!warnIfTooLong(resume, job)) return;
-
-        document.getElementById('tailorLoading').classList.add('active');
-        document.getElementById('tailorQuestionsContainer').classList.add('hidden');
-
-        try {
-            const sys    = 'You are an expert resume writer.';
-            const prompt = `Compare the resume against the job description.\n\n` +
-                safeWrap('resume', resume) + '\n' +
-                safeWrap('job_description', job) +
-                `\n\nIdentify gaps. Ask 3–5 specific clarifying questions to extract experience that could fill those gaps. Return ONLY the questions.`;
-
-            const result = await callGemini(sys, prompt);
-            if (result) {
-                document.getElementById('tailorAIQuestions').innerText = result;
-                document.getElementById('tailorQuestionsContainer').classList.remove('hidden');
+        function initAudio() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert("Your browser does not support audio dictation. Please type your answer.");
+                return false;
             }
-        } finally {
-            hideLoading('tailorLoading');
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+                let finalTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+                updateInterimPreview(interimTranscript);
+                const answerBox = document.getElementById('feedbackAnswer');
+                if (finalTranscript) {
+                    answerBox.value += finalTranscript;
+                    updateInterimPreview(''); // clear preview once finalised
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.error("Speech recognition error", event.error);
+                stopAudioRecording();
+            };
+            return true;
         }
-    }
 
-    async function generateFinalResume() {
-        const resume      = document.getElementById('tailorResume').value;
-        const job         = document.getElementById('tailorJob').value;
-        const aiQuestions = document.getElementById('tailorAIQuestions').innerText;
-        const userAnswers = document.getElementById('tailorUserAnswers').value;
-
-        if (!userAnswers) return alert('Please answer the AI clarification questions first.');
-        if (!warnIfTooLong(resume, job, aiQuestions, userAnswers)) return;
-
-        document.getElementById('tailorFinalLoading').classList.add('active');
-        document.getElementById('tailorFinalOutput').classList.add('hidden');
-
-        try {
-            const sys    = 'You are an expert resume writer. Format the output as clean plain-text with clear section headings.';
-            const prompt = safeWrap('original_resume', resume) + '\n' +
-                safeWrap('target_job', job) + '\n' +
-                safeWrap('gap_questions', aiQuestions) + '\n' +
-                safeWrap('candidate_answers', userAnswers) +
-                `\n\nRewrite the resume to be perfectly tailored for the target job. Remain truthful. Use strong action verbs and quantify impact where possible.`;
-
-            const result = await callGemini(sys, prompt);
-            if (result) {
-                document.getElementById('tailorFinalOutputContent').innerHTML = '<p class="mt-3">' + renderMarkdown(result) + '</p>';
-                document.getElementById('tailorFinalOutput').classList.remove('hidden');
+        function toggleAudioRecording() {
+            const btn = document.getElementById('micBtn');
+            if (!isRecording) {
+                if (!recognition && !initAudio()) return;
+                recognition.start();
+                isRecording = true;
+                btn.innerText = "ðŸ›‘ Stop Recording";
+                btn.classList.replace('bg-red-300', 'bg-red-500');
+            } else {
+                stopAudioRecording();
             }
-        } finally {
-            hideLoading('tailorFinalLoading');
-        }
-    }
-
-
-    // ┌─────────────────────────────────────────────────────────────────┐
-    // │ I. TAB 4 — INTERVIEW PREP                                       │
-    // └─────────────────────────────────────────────────────────────────┘
-
-    async function generatePrep() {
-        const resume  = document.getElementById('prepResume').value;
-        const job     = document.getElementById('prepJob').value;
-        const company = document.getElementById('prepCompany').value;
-
-        if (!resume || !job) return alert('Resume and Job Description are required.');
-        if (!warnIfTooLong(resume, job, company)) return;
-
-        document.getElementById('prepLoading').classList.add('active');
-        document.getElementById('prepOutput').classList.add('hidden');
-
-        try {
-            const sys    = 'You are an expert technical and behavioural interview coach. Format output for readability.';
-            const prompt = `Prepare the candidate for this interview.\n\n` +
-                safeWrap('company_profile', company) + '\n' +
-                safeWrap('job_description', job) + '\n' +
-                safeWrap('resume', resume) +
-                `\n\nGenerate:\n` +
-                `1. What this company values (based on the data).\n` +
-                `2. Five tailored behavioural questions with STAR-method answer advice personalised to the candidate's resume.\n` +
-                `3. Three technical / role-specific questions.`;
-
-            const result = await callGemini(sys, prompt);
-            if (result) {
-                document.getElementById('prepOutputContent').innerHTML = '<p class="mt-3">' + renderMarkdown(result) + '</p>';
-                document.getElementById('prepOutput').classList.remove('hidden');
-            }
-        } finally {
-            hideLoading('prepLoading');
-        }
-    }
-
-
-    // ┌─────────────────────────────────────────────────────────────────┐
-    // │ J. TAB 5 — IV MOCK & FEEDBACK                                   │
-    // │    J1. Speech Recognition (mic recording)                      │
-    // │    J2. Answer evaluation with confidence scoring               │
-    // └─────────────────────────────────────────────────────────────────┘
-
-    // J1. Speech Recognition ─────────────────────────────────────────
-
-    let _recognition = null;  // SpeechRecognition instance (created once)
-    let _isRecording = false;
-
-    /** Shows or clears the live interim-transcript preview above the textarea. */
-    function updateInterimPreview(text) {
-        const preview = document.getElementById('interimPreview');
-        if (!preview) return;
-        if (text) {
-            preview.classList.remove('hidden');
-            preview.textContent = text;
-        } else {
-            preview.classList.add('hidden');
-        }
-    }
-
-    /**
-     * Initialises the Web Speech API recognition object.
-     * Returns false if the browser doesn't support it.
-     */
-    function initAudio() {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-            alert('Your browser does not support audio dictation. Please type your answer.');
-            return false;
         }
 
-        _recognition = new SpeechRecognition();
-        _recognition.continuous     = true;  // keep listening until stopped
-        _recognition.interimResults = true;  // show partial results live
-
-        _recognition.onresult = (event) => {
-            let interim = '';
-            let final   = '';
-            for (let i = event.resultIndex; i < event.results.length; i++) {
-                if (event.results[i].isFinal) final   += event.results[i][0].transcript;
-                else                          interim  += event.results[i][0].transcript;
-            }
-            updateInterimPreview(interim);
-            if (final) {
-                document.getElementById('feedbackAnswer').value += final;
-                updateInterimPreview(''); // clear preview after finalisation
-            }
-        };
-
-        _recognition.onerror = (event) => {
-            console.error('Speech recognition error:', event.error);
-            stopAudioRecording();
-        };
-
-        return true;
-    }
-
-    function toggleAudioRecording() {
-        const btn = document.getElementById('micBtn');
-        if (!_isRecording) {
-            if (!_recognition && !initAudio()) return;
-            _recognition.start();
-            _isRecording = true;
-            btn.textContent = '🛑 Stop Recording';
-            btn.classList.replace('bg-red-300', 'bg-red-500');
-        } else {
-            stopAudioRecording();
-        }
-    }
-
-    function stopAudioRecording() {
-        if (_recognition) _recognition.stop();
-        _isRecording = false;
-        const btn = document.getElementById('micBtn');
-        if (btn) {
-            btn.textContent = '🎤 Start Recording';
+        function stopAudioRecording() {
+            if (recognition) recognition.stop();
+            isRecording = false;
+            const btn = document.getElementById('micBtn');
+            btn.innerText = "ðŸŽ¤ Start Audio Recording";
             btn.classList.replace('bg-red-500', 'bg-red-300');
         }
-    }
 
-    // J2. Answer Evaluation ──────────────────────────────────────────
+        async function getFeedback() {
+            const questions = document.getElementById('feedbackQuestions').value;
+            const answer = document.getElementById('feedbackAnswer').value;
 
-    async function getFeedback() {
-        const questions = document.getElementById('feedbackQuestions').value;
-        const answer    = document.getElementById('feedbackAnswer').value;
+            if (!questions || !answer) return alert("Please provide both the question and your answer.");
+            if (!warnIfTooLong(questions, answer)) return;
 
-        if (!questions || !answer) return alert('Please provide both a question and your answer.');
-        if (!warnIfTooLong(questions, answer)) return;
+            document.getElementById('feedbackLoading').classList.add('active');
+            document.getElementById('feedbackOutput').classList.add('hidden');
 
-        document.getElementById('feedbackLoading').classList.add('active');
-        document.getElementById('feedbackOutput').classList.add('hidden');
+            try {
+                const sysInstruct = "You are a highly analytical interview coach and behavioral psychologist.";
+                const prompt = `${safeWrap('interview_question', questions)}\n\n${safeWrap('candidate_answer', answer)}\n\nPlease evaluate my response on two distinct fronts:\n\n**1. Content & Structure**\nEvaluate what I did well, what I missed, and provide a polished example of how I could have answered it better using the STAR method.\n\n**2. Confidence Level & Delivery Analysis**\nPerform a linguistic tone analysis on the text of my answer. Calculate a 'Confidence Score' (0-100%). Look specifically for hesitation markers, filler words (e.g., um, ah, like, you know), hedging or passive language (e.g., 'I think maybe', 'sort of', 'we tried to'), and the assertiveness of my sentence structure. Provide a brief psychological breakdown of how an interviewer would perceive my confidence based on these linguistic markers, and give me specific advice on what words to eliminate to sound more authoritative.`;
 
-        try {
-            const sys    = 'You are a highly analytical interview coach and behavioural psychologist.';
-            const prompt = safeWrap('interview_question', questions) + '\n\n' +
-                safeWrap('candidate_answer', answer) +
-                `\n\nEvaluate on TWO fronts:\n\n` +
-                `**1. Content & Structure** – what was done well, what was missed, and a polished STAR-method example answer.\n\n` +
-                `**2. Confidence Score (0–100%)** – linguistic tone analysis. Flag hesitation markers, filler words (um, like, sort of), ` +
-                `and passive/hedging language. Psychological breakdown of how an interviewer would perceive the candidate's confidence. ` +
-                `Give specific words to eliminate to sound more authoritative.`;
+                const result = await callGemini(sysInstruct, prompt);
 
-            const result = await callGemini(sys, prompt);
-            if (result) {
-                document.getElementById('feedbackOutputContent').innerHTML = '<p class="mt-3">' + renderMarkdown(result) + '</p>';
-                document.getElementById('feedbackOutput').classList.remove('hidden');
+                if (result) {
+                    document.getElementById('feedbackOutputContent').innerHTML = '<p class="mt-3">' + renderMarkdown(result) + '</p>';
+                    document.getElementById('feedbackOutput').classList.remove('hidden');
+                }
+            } finally {
+                hideLoading('feedbackLoading');
             }
-        } finally {
-            hideLoading('feedbackLoading');
         }
-    }
 
+        // --- 5. Resume Tailoring Feature ---
+        // â”€â”€ TAILOR SYSTEM PROMPT (shared by all three tailor functions) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        const TAILOR_SYSTEM = `You are a world-class resume writer and ATS optimization expert with 15+ years of experience placing candidates at top companies.
 
-    // ┌─────────────────────────────────────────────────────────────────┐
-    // │ K. TAB 6 — RESUME GRILLING                                      │
-    // └─────────────────────────────────────────────────────────────────┘
+CORE RULES â€” follow every one without exception:
+1. REWRITE every bullet point using the exact terminology, keywords, and phrases from the job description. Do not preserve the candidate's original wording unless it already matches the JD.
+2. REORDER sections and bullets so the most JD-relevant experience appears first within each role.
+3. INJECT JD keywords naturally into the Summary/Objective, Skills, and each role â€” this is critical for ATS scoring.
+4. QUANTIFY every achievement with numbers, percentages, or scale wherever the candidate's input hints at it (e.g. "improved process" â†’ "reduced processing time by 35%"). If no data is given, use credible relative language ("significantly", "consistently").
+5. REMOVE or condense experience that is irrelevant to the JD. Do not pad.
+6. MIRROR the seniority level and tone of the JD (startup casual vs enterprise formal).
+7. OUTPUT format: plain text, clean sections (Summary, Skills, Experience, Education, Certifications). Each role has: Company | Title | Date range, then 4â€“6 bullet points starting with strong action verbs.
+8. The output must read as if this candidate was born for this specific role â€” every line must serve the JD.`;
 
-    /**
-     * Populates the Grilling textarea from either the Master Resume
-     * or the Tailor tab's resume field.
-     * @param {'master'|'tailor'} source
-     */
-    function grillUseSource(source) {
-        const target = document.getElementById('grillingResume');
-        const sourceMap = {
-            master: { id: 'masterResume',  label: '📄 Master Resume tab' },
-            tailor: { id: 'tailorResume',  label: 'Resume Tailor tab'    }
-        };
-        const s = sourceMap[source];
-        if (!s) return;
-        const val = (document.getElementById(s.id).value || '').trim();
-        if (!val) return alert(`${s.label} is empty. Please fill it first.`);
-        target.value = val;
-    }
+        // â”€â”€ QUICK TAILOR: direct single-shot rewrite â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        async function quickTailorResume() {
+            const resume = document.getElementById('tailorResume').value.trim();
+            const job    = document.getElementById('tailorJob').value.trim();
 
-    async function grillResume() {
-        const resume = document.getElementById('grillingResume').value;
+            if (!resume) return alert('Please paste your resume first.');
+            if (!job)    return alert('Please paste the job description first.');
+            if (!warnIfTooLong(resume, job)) return;
 
-        if (!resume) return alert('Please paste a resume to grill.');
-        if (!warnIfTooLong(resume)) return;
+            document.getElementById('tailorLoading').classList.add('active');
+            document.getElementById('tailorFinalOutput').classList.add('hidden');
+            document.getElementById('tailorDiffStrip').classList.add('hidden');
 
-        document.getElementById('grillingLoading').classList.add('active');
-        document.getElementById('grillingOutput').classList.add('hidden');
+            try {
+                const prompt =
+                    safeWrap('original_resume', resume) + '\n\n' +
+                    safeWrap('job_description', job) + '\n\n' +
+                    `TASK: Produce a fully rewritten, ATS-optimised resume tailored SPECIFICALLY to the job description above.
 
-        try {
-            const sys    = 'You are an extremely tough, skeptical interviewer stress-testing a candidate. Use numbered lists grouped by resume section.';
-            const prompt = safeWrap('resume', resume) +
-                `\n\nIdentify the most recent role. Dedicate 60%+ of your questions to that role. ` +
-                `Then interrogate the rest of the resume for weaknesses, exaggerations, and knowledge gaps. ` +
-                `Group all questions clearly by the section/line they target.`;
+Step 1 â€” Extract from the JD:
+  â€¢ Required skills, tools, technologies, and qualifications
+  â€¢ Key responsibilities and deliverables
+  â€¢ Seniority level, team size context, and domain
 
-            const result = await callGemini(sys, prompt);
-            if (result) {
-                document.getElementById('grillingOutputContent').innerHTML = '<p class="mt-3">' + renderMarkdown(result) + '</p>';
-                document.getElementById('grillingOutput').classList.remove('hidden');
+Step 2 â€” Rewrite the resume:
+  â€¢ Replace every generic bullet with a JD-matched version using the exact keywords extracted in Step 1
+  â€¢ Rewrite the Summary to open with the job title from the JD and the top 3 requirements
+  â€¢ Add a Skills section listing every JD keyword the candidate has evidence for
+  â€¢ For each role, lead with the bullets that map most directly to the JD requirements
+  â€¢ Use strong action verbs (Led, Built, Drove, Delivered, Reduced, Increased, Designed, Managed)
+  â€¢ Quantify wherever possible
+
+Step 3 â€” At the very end, add a one-line section called "CHANGES MADE:" listing the 3â€“5 biggest rewrites you made (e.g. "Rewrote summary to match Product Manager framing", "Added Agile/Scrum keywords throughout").
+
+Output ONLY the complete tailored resume followed by the CHANGES MADE section. No commentary before it.`;
+
+                const result = await callGemini(TAILOR_SYSTEM, prompt);
+
+                if (result) {
+                    // Split off the CHANGES MADE section to show in the diff strip
+                    const changesSplit = result.split(/CHANGES MADE:/i);
+                    const resumeText   = changesSplit[0].trim();
+                    const changesText  = changesSplit[1] ? changesSplit[1].trim() : '';
+
+                    document.getElementById('tailorFinalOutputContent').innerText = resumeText;
+                    document.getElementById('tailorFinalOutput').classList.remove('hidden');
+
+                    if (changesText) {
+                        document.getElementById('tailorDiffText').textContent = changesText;
+                        document.getElementById('tailorDiffStrip').classList.remove('hidden');
+                    }
+                }
+            } finally {
+                hideLoading('tailorLoading');
             }
-        } finally {
-            hideLoading('grillingLoading');
         }
-    }
 
+        // â”€â”€ DEEP TAILOR STEP 1: gap analysis + clarifying questions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        async function analyzeResumeGaps() {
+            const resume = document.getElementById('tailorResume').value.trim();
+            const job    = document.getElementById('tailorJob').value.trim();
 
-    // ┌─────────────────────────────────────────────────────────────────┐
-    // │ L. TAB 7 — IV VIDEOS                                            │
-    // │    Collapsible accordion; thumbnails lazy-loaded on expand.    │
-    // │    IVPlayer: shared fullscreen YouTube embed overlay.          │
-    // └─────────────────────────────────────────────────────────────────┘
+            if (!resume) return alert('Please paste your resume first.');
+            if (!job)    return alert('Please paste the job description first.');
+            if (!warnIfTooLong(resume, job)) return;
 
-    (function VideoModule() {
+            document.getElementById('tailorLoading').classList.add('active');
+            document.getElementById('tailorQuestionsContainer').classList.add('hidden');
 
-        // ── L1. Data ─────────────────────────────────────────────────
-        var VIDEO_CHANNELS = [
+            try {
+                const prompt =
+                    safeWrap('resume', resume) + '\n\n' +
+                    safeWrap('job_description', job) + '\n\n' +
+                    `TASK: Perform a precision gap analysis between this resume and the job description.
+
+Step 1 â€” List every required skill, tool, qualification, and responsibility in the JD that is either:
+  (a) Missing entirely from the resume, or
+  (b) Present but too weakly worded to score in ATS
+
+Step 2 â€” For each gap, write ONE specific clarifying question to the candidate that could reveal hidden experience to fill it.
+  â€¢ Be surgical â€” ask about specific projects, tools, team sizes, outcomes, metrics
+  â€¢ Do NOT ask generic questions like "Do you have experience with X?" â€” ask HOW they used it, WHAT they built, WHAT the outcome was
+
+Return ONLY the numbered questions. No preamble, no labels, no gap list â€” just the questions the candidate must answer.`;
+
+                const result = await callGemini(TAILOR_SYSTEM, prompt);
+
+                if (result) {
+                    document.getElementById('tailorAIQuestions').innerText = result;
+                    document.getElementById('tailorQuestionsContainer').classList.remove('hidden');
+                }
+            } finally {
+                hideLoading('tailorLoading');
+            }
+        }
+
+        // â”€â”€ DEEP TAILOR STEP 2: final rewrite using gap answers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        async function generateFinalResume() {
+            const resume      = document.getElementById('tailorResume').value.trim();
+            const job         = document.getElementById('tailorJob').value.trim();
+            const aiQuestions = document.getElementById('tailorAIQuestions').innerText.trim();
+            const userAnswers = document.getElementById('tailorUserAnswers').value.trim();
+
+            if (!userAnswers) return alert('Please answer the clarification questions first.');
+            if (!warnIfTooLong(resume, job, aiQuestions, userAnswers)) return;
+
+            document.getElementById('tailorFinalLoading').classList.add('active');
+            document.getElementById('tailorFinalOutput').classList.add('hidden');
+            document.getElementById('tailorDiffStrip').classList.add('hidden');
+
+            try {
+                const prompt =
+                    safeWrap('original_resume', resume) + '\n\n' +
+                    safeWrap('job_description', job) + '\n\n' +
+                    safeWrap('gap_questions_asked', aiQuestions) + '\n\n' +
+                    safeWrap('candidate_answers', userAnswers) + '\n\n' +
+                    `TASK: Produce the definitive tailored resume using ALL information above.
+
+Rules:
+1. Treat the candidate's answers as new raw experience data â€” weave every relevant detail into the appropriate role's bullets
+2. Every bullet must use exact language from the JD â€” no generic filler
+3. Bullets must follow the formula: [Action Verb] + [What you did] + [Tool/Method] + [Quantified Outcome]
+   Example: "Architected a microservices migration using Kubernetes, reducing deployment time by 60% and enabling 3x scale"
+4. The Summary must open: "[JD Job Title] with [X] years of experience in [top 3 JD themes]..."
+5. Skills section: list only skills evidenced by the resume OR the candidate's answers â€” no fabrication
+6. End with a "CHANGES MADE:" one-liner summary of the 3 biggest rewrites
+
+Output ONLY the complete tailored resume + CHANGES MADE. No commentary before it.`;
+
+                const result = await callGemini(TAILOR_SYSTEM, prompt);
+
+                if (result) {
+                    const changesSplit = result.split(/CHANGES MADE:/i);
+                    const resumeText   = changesSplit[0].trim();
+                    const changesText  = changesSplit[1] ? changesSplit[1].trim() : '';
+
+                    document.getElementById('tailorFinalOutputContent').innerText = resumeText;
+                    document.getElementById('tailorFinalOutput').classList.remove('hidden');
+
+                    if (changesText) {
+                        document.getElementById('tailorDiffText').textContent = changesText;
+                        document.getElementById('tailorDiffStrip').classList.remove('hidden');
+                    }
+                }
+            } finally {
+                hideLoading('tailorFinalLoading');
+            }
+        }
+
+        // â”€â”€ REFINE FURTHER: iterative improvement on the last output â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        async function tailorRefineFurther() {
+            const currentOutput = document.getElementById('tailorFinalOutputContent').innerText.trim();
+            const job           = document.getElementById('tailorJob').value.trim();
+
+            if (!currentOutput || !job) return;
+
+            document.getElementById('tailorLoading').classList.add('active');
+
+            try {
+                const prompt =
+                    safeWrap('current_tailored_resume', currentOutput) + '\n\n' +
+                    safeWrap('job_description', job) + '\n\n' +
+                    `TASK: You already tailored this resume once. Now push it further.
+
+Find and fix:
+1. Any bullet that still uses generic language instead of JD-specific terms â€” rewrite it
+2. Any JD keyword that appears in the description but not yet in the resume â€” insert it naturally
+3. Any bullet that lacks a quantified outcome â€” add one
+4. Any section ordering that does not lead with the most JD-relevant content â€” reorder it
+5. The Summary â€” tighten it to 3 punchy lines maximum
+
+Output the improved resume only. No commentary.`;
+
+                const result = await callGemini(TAILOR_SYSTEM, prompt);
+
+                if (result) {
+                    document.getElementById('tailorFinalOutputContent').innerText = result.trim();
+                    document.getElementById('tailorDiffStrip').classList.add('hidden'); // clear old diff
+                }
+            } finally {
+                hideLoading('tailorLoading');
+            }
+        }
+
+        // --- 6. Resume Grilling Feature ---
+        async function grillResume() {
+            const resume = document.getElementById('grillingResume').value;
+
+            if (!resume) return alert("Please paste your resume to be grilled.");
+            if (!warnIfTooLong(resume)) return;
+
+            document.getElementById('grillingLoading').classList.add('active');
+            document.getElementById('grillingOutput').classList.add('hidden');
+
+            try {
+                const sysInstruct = "You are an extremely tough, skeptical, and highly critical interviewer. Your goal is to stress-test the candidate. Format the output cleanly using bullet points or numbered lists.";
+                const prompt = `${safeWrap('resume', resume)}\n\nFirst, identify the most recent or current job position listed. Since the current job is the most important and typically faces the vast majority of interview scrutiny, dedicate at least 60% of your extremely tough, probing questions specifically to this most recent role.\n\nAfter thoroughly grilling the current role, evaluate the rest of the resume critically. Generate questions aimed at finding weaknesses, exposing exaggerations, or testing technical depths and knowledge gaps in their stated experience. Group all questions clearly by the specific section or line of the resume they target.`;
+
+                const result = await callGemini(sysInstruct, prompt);
+
+                if (result) {
+                    document.getElementById('grillingOutputContent').innerHTML = '<p class="mt-3">' + renderMarkdown(result) + '</p>';
+                    document.getElementById('grillingOutput').classList.remove('hidden');
+                }
+            } finally {
+                hideLoading('grillingLoading');
+            }
+        }
+
+        // --- grillUseSource: pull from master or tailor into grilling textarea ---
+        function grillUseSource(source) {
+            const grillingBox = document.getElementById('grillingResume');
+            if (source === 'master') {
+                const val = document.getElementById('masterResume').value.trim();
+                if (!val) return alert('Master Resume is empty. Please fill it in the ðŸ“„ Master Resume tab first.');
+                grillingBox.value = val;
+            } else if (source === 'tailor') {
+                const val = document.getElementById('tailorResume').value.trim();
+                if (!val) return alert('Tailor Resume is empty. Please paste a resume in the Resume Tailor tab first.');
+                grillingBox.value = val;
+            }
+        }
+
+        // --- 7. Interview Videos Feature (SCPDD-inspired) ---
+        (function() {
+            var VIDEO_CHANNELS = [
                 {
                     name: "Self Introduction & HR Round",
                     badge: "HR",
@@ -1228,7 +1068,7 @@ SECTION 3 — PAGE SHELL & HEADER
                 }
             ];
 
-        var BADGE_COLORS = {
+            var BADGE_COLORS = {
                 'HR':          'background:#dbeafe;color:#1e3a5f;border:1px solid #3b82f6',
                 'Behavioural': 'background:#fef3c7;color:#78350f;border:1px solid #f59e0b',
                 'Negotiation': 'background:#dcfce7;color:#14532d;border:1px solid #22c55e',
@@ -1237,506 +1077,633 @@ SECTION 3 — PAGE SHELL & HEADER
                 'Soft Skills': 'background:#f0fdf4;color:#166534;border:1px solid #4ade80'
             };
 
-        // ── L2. URL helpers ──────────────────────────────────────────
-        function thumbUrl(vid) { return 'https://img.youtube.com/vi/' + vid + '/mqdefault.jpg'; }
+            function thumbUrl(vid) { return 'https://img.youtube.com/vi/' + vid + '/mqdefault.jpg'; }
+            function embedUrl(vid) { return 'https://www.youtube.com/embed/' + vid + '?autoplay=1&rel=0&modestbranding=1'; }
 
-        // ── L3. Accordion group builder ──────────────────────────────
-        function buildVideoGroup(ch, container) {
-            const badgeStyle = BADGE_COLORS[ch.badge] || 'background:#e5e7eb;color:#111;border:1px solid #aaa';
+            function buildVideoGroup(ch, container) {
+                var badgeStyle = BADGE_COLORS[ch.badge] || 'background:#e5e7eb;color:#111;border:1px solid #aaa';
+                var groupId = 'iv-grp-' + ch.name.replace(/\W+/g, '');
+                var gridId  = 'iv-grid-' + ch.name.replace(/\W+/g, '');
 
-            const div = document.createElement('div');
-            div.style.cssText = 'border-bottom:1px solid rgba(0,0,0,0.12);';
+                var div = document.createElement('div');
+                div.style.cssText = 'border-bottom:1px solid rgba(0,0,0,0.12);';
+                div.id = groupId;
 
-            // Header
-            const header = document.createElement('div');
-            header.style.cssText = 'display:flex;align-items:center;padding:11px 16px;cursor:pointer;gap:10px;user-select:none;';
-            header.addEventListener('mouseover', () => header.style.background = 'rgba(0,0,0,0.05)');
-            header.addEventListener('mouseout',  () => header.style.background = '');
+                // Header row
+                var header = document.createElement('div');
+                header.style.cssText = 'display:flex;align-items:center;padding:11px 16px;cursor:pointer;gap:10px;user-select:none;';
+                header.addEventListener('mouseover', function(){ header.style.background='rgba(0,0,0,0.05)'; });
+                header.addEventListener('mouseout',  function(){ header.style.background=''; });
 
-            const badge = document.createElement('span');
-            badge.textContent = ch.badge;
-            badge.setAttribute('style', 'font-size:11px;font-weight:900;text-transform:uppercase;padding:3px 8px;border-radius:3px;letter-spacing:.1em;flex-shrink:0;' + badgeStyle);
+                var badge = document.createElement('span');
+                badge.textContent = ch.badge;
+                badge.setAttribute('style', 'font-size:11px;font-weight:900;text-transform:uppercase;padding:3px 8px;border-radius:3px;letter-spacing:.1em;flex-shrink:0;' + badgeStyle);
 
-            const nameWrap = document.createElement('div');
-            nameWrap.style.cssText = 'flex:1;min-width:0;';
-            nameWrap.innerHTML =
-                '<div style="font-size:17px;font-weight:700;">' + ch.name + '</div>' +
-                '<div style="font-size:12px;color:#6b7280;margin-top:2px;">' + ch.desc + '</div>';
+                var nameWrap = document.createElement('div');
+                nameWrap.style.cssText = 'flex:1;min-width:0;';
+                nameWrap.innerHTML =
+                    '<div style="font-size:17px;font-weight:700;">' + ch.name + '</div>' +
+                    '<div style="font-size:12px;color:#6b7280;margin-top:2px;">' + ch.desc + '</div>';
 
-            const arrow = document.createElement('span');
-            arrow.textContent = '▼';
-            arrow.style.cssText = 'color:#9ca3af;font-size:14px;transition:transform .25s;';
+                var arrow = document.createElement('span');
+                arrow.textContent = 'â–¼';
+                arrow.style.cssText = 'color:#9ca3af;font-size:14px;transition:transform .25s;';
 
-            header.append(badge, nameWrap, arrow);
+                header.appendChild(badge);
+                header.appendChild(nameWrap);
+                header.appendChild(arrow);
 
-            // Video grid (lazy)
-            const grid = document.createElement('div');
-            grid.style.cssText = 'display:none;padding:8px 12px 12px;background:rgba(0,0,0,0.03);flex-direction:column;gap:10px;';
+                // Grid
+                var grid = document.createElement('div');
+                grid.id = gridId;
+                grid.style.cssText = 'display:none;padding:8px 12px 12px;background:rgba(0,0,0,0.03);flex-direction:column;gap:10px;';
 
-            div.append(header, grid);
-            container.appendChild(div);
+                div.appendChild(header);
+                div.appendChild(grid);
+                container.appendChild(div);
 
-            // Toggle on click
-            let open = false;
-            header.addEventListener('click', () => {
-                open = !open;
-                arrow.style.transform = open ? 'rotate(180deg)' : '';
-                grid.style.display    = open ? 'flex' : 'none';
-                if (open && !grid.dataset.loaded) {
-                    grid.dataset.loaded = '1';
-                    renderVideos(grid, ch.videos, ch.name); // lazy-render
-                }
-            });
-        }
-
-        // ── L4. Video item renderer (creates DOM elements, no innerHTML events) ──
-        function renderVideos(grid, videos, channelName) {
-            videos.forEach(v => {
-                const item = document.createElement('div');
-                item.style.cssText = 'display:flex;align-items:flex-start;gap:10px;padding:8px 6px;border-radius:4px;cursor:pointer;transition:background .15s;border-bottom:1px solid rgba(0,0,0,0.07);';
-                item.addEventListener('mouseover', () => item.style.background = 'rgba(0,0,0,0.05)');
-                item.addEventListener('mouseout',  () => item.style.background = '');
-
-                const img = document.createElement('img');
-                img.src      = thumbUrl(v.vid);
-                img.alt      = '';
-                img.loading  = 'lazy';
-                img.style.cssText = 'width:128px;height:72px;object-fit:cover;border-radius:3px;border:1px solid rgba(0,0,0,0.15);flex-shrink:0;';
-                img.onerror  = () => img.style.display = 'none';
-
-                const info = document.createElement('div');
-                info.style.cssText = 'flex:1;min-width:0;';
-                info.innerHTML =
-                    '<div style="font-size:15px;font-weight:700;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">' + v.title + '</div>' +
-                    '<div style="font-size:12px;color:#6b7280;margin-top:4px;text-transform:uppercase;letter-spacing:.07em;">' + channelName + '</div>';
-
-                const playBtn = document.createElement('button');
-                playBtn.innerHTML = '&#9654;';
-                playBtn.style.cssText = 'width:36px;height:36px;background:#1a1a1a;color:#fff;border:none;border-radius:50%;font-size:14px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:transform .15s;';
-                playBtn.addEventListener('mouseover', () => playBtn.style.transform = 'scale(1.1)');
-                playBtn.addEventListener('mouseout',  () => playBtn.style.transform = '');
-                playBtn.addEventListener('click', e => { e.stopPropagation(); IVPlayer.open(v.vid, v.title, channelName); });
-
-                item.append(img, info, playBtn);
-                item.addEventListener('click', () => IVPlayer.open(v.vid, v.title, channelName));
-                grid.appendChild(item);
-            });
-        }
-
-        // ── L5. Initialise on page load ──────────────────────────────
-        window.addEventListener('load', () => {
-            const container = document.getElementById('video-channels-iv');
-            if (container) VIDEO_CHANNELS.forEach(ch => buildVideoGroup(ch, container));
-        });
-
-    })(); // end VideoModule
-
-
-    // ── L6. IVPlayer: shared YouTube fullscreen overlay ──────────────────────
-    const IVPlayer = (() => {
-        // Element references are cached once at startup (they exist in DOM at parse time)
-        const overlay = document.getElementById('iv-player-overlay');
-        const iframe  = document.getElementById('iv-player-iframe');
-        const pTitle  = document.getElementById('iv-p-title');
-        const pInfo   = document.getElementById('iv-p-info-title');
-        const pMeta   = document.getElementById('iv-p-info-meta');
-        const pLink   = document.getElementById('iv-p-yt-link');
-
-        function embedUrl(vid) {
-            return 'https://www.youtube.com/embed/' + vid + '?autoplay=1&rel=0&modestbranding=1';
-        }
-
-        function open(vid, title, channel) {
-            iframe.src          = embedUrl(vid);
-            pTitle.textContent  = title;
-            pInfo.textContent   = title;
-            pMeta.textContent   = channel || '';
-            pLink.href          = 'https://www.youtube.com/watch?v=' + vid;
-            overlay.style.display       = 'flex';
-            document.body.style.overflow = 'hidden'; // prevent background scroll
-        }
-
-        function close() {
-            overlay.style.display        = 'none';
-            iframe.src                   = '';         // stop video
-            document.body.style.overflow = '';
-        }
-
-        document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
-        return { open, close };
-    })();
-
-
-    // ┌─────────────────────────────────────────────────────────────────┐
-    // │ M. TAB 8 — DAILY AI COACH                                       │
-    // │    Uses Gemini multi-turn (full history per call).             │
-    // │    Skills extracted via SKILLS_JSON protocol in system prompt. │
-    // │    All state persisted to localStorage (survives refresh).     │
-    // └─────────────────────────────────────────────────────────────────┘
-
-    const Coach = (() => {
-
-        // ── M1. Storage keys ─────────────────────────────────────────
-        const SKILLS_KEY  = 'coach_skills_v1';   // JSON: [{name, context, date}]
-        const HISTORY_KEY = 'coach_history_v1';  // JSON: Gemini message turns
-
-        // ── M2. Runtime state ────────────────────────────────────────
-        let history = []; // [{role:'user'|'model', parts:[{text}]}]
-        let skills  = []; // [{name, context, date}]
-
-        // ── M3. Skill bank persistence ───────────────────────────────
-
-        function loadSkills() {
-            try { skills = JSON.parse(localStorage.getItem(SKILLS_KEY) || '[]'); }
-            catch (e) { skills = []; }
-            renderSkills();
-        }
-
-        function saveSkills() {
-            localStorage.setItem(SKILLS_KEY, JSON.stringify(skills));
-        }
-
-        /** Adds a new skill (case-insensitive dedup). */
-        function addSkill(name, context) {
-            const norm = name.trim().toLowerCase();
-            if (!norm || skills.some(s => s.name.toLowerCase() === norm)) return;
-            skills.push({ name: name.trim(), context: context || '', date: new Date().toLocaleDateString('en-IN') });
-            saveSkills();
-            renderSkills();
-        }
-
-        /** Re-renders all skill tag pills in the Skill Memory Bank panel. */
-        function renderSkills() {
-            const el = document.getElementById('coach-skills-list');
-            if (!el) return;
-            if (skills.length === 0) {
-                el.innerHTML = '<span class="text-xs text-gray-400 italic">Skills detected by AI will appear here...</span>';
-                return;
-            }
-            el.innerHTML = '';
-            skills.forEach(s => {
-                const tag = document.createElement('span');
-                tag.className = 'skill-tag';
-                tag.title     = s.context + ' (' + s.date + ')';
-                tag.textContent = s.name;
-                el.appendChild(tag);
-            });
-        }
-
-        // ── M4. System prompt builder ────────────────────────────────
-        /**
-         * Builds a fresh system prompt each call so the AI always has
-         * the latest known-skills list (avoids re-suggesting known skills).
-         */
-        function buildSystemPrompt() {
-            const knownSkills = skills.map(s => s.name).join(', ') || 'none yet';
-            return (
-                'You are a rigorous, empathetic Daily AI Career Coach. Follow this conversation loop:\n' +
-                '1. PROBE: Ask 2–3 specific follow-up questions about HOW the user did the task, tools used, and outcome.\n' +
-                '2. ASSESS: Identify skill gaps directly and constructively.\n' +
-                '3. TRAIN: Suggest ONE concrete micro-exercise to fix the biggest gap (completable today/this week).\n' +
-                '4. SKILL EXTRACT: When you have enough info, output EXACTLY this line (no markdown fences):\n' +
-                '   SKILLS_JSON:{"skills":["Skill A","Skill B"],"context":"one-line summary"}\n' +
-                '5. RESUME ADVICE: Suggest 1–2 resume bullet points with strong action verbs and quantified impact.\n' +
-                '6. NEXT STEP: End every reply with what to log or work on tomorrow.\n\n' +
-                'Already known skills (do NOT re-suggest): ' + knownSkills + '\n' +
-                'Keep responses focused and conversational. Follow stages naturally — do not dump everything at once.'
-            );
-        }
-
-        // ── M5. Multi-turn AI call ───────────────────────────────────
-        /**
-         * Appends user message to history, calls Gemini with full history,
-         * parses SKILLS_JSON from the response (if present), strips it before display,
-         * appends model reply to history, and persists everything.
-         */
-        async function callCoach(userText) {
-            history.push({ role: 'user', parts: [{ text: userText }] });
-
-            if (_cachedKeys.length === 0) {
-                appendMessage('ai', 'No API key configured. Please add your Gemini key in ⚙️ API Settings.');
-                history.pop();
-                return null;
-            }
-
-            const body = JSON.stringify({
-                system_instruction: { parts: [{ text: buildSystemPrompt() }] },
-                contents: history
-            });
-
-            let result = null;
-            for (const modelName of MODEL_CASCADE) {
-                if (result) break;
-                for (let k = 0; k < _cachedKeys.length && !result; k++) {
-                    const apiKey = getAvailableKey();
-                    if (!apiKey) break;
-                    try {
-                        const url = API_BASE_URL + modelName + ':generateContent?key=' + apiKey;
-                        const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body });
-                        if (res.ok) {
-                            const data = await res.json();
-                            const t = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-                            if (t) result = t;
-                        } else if (res.status === 429 || res.status === 403) {
-                            markKeyExhausted(apiKey);
-                        }
-                    } catch(e) { /* network flake – try next key */ }
-                }
-            }
-
-            if (!result) {
-                appendMessage('ai', 'Could not reach the AI. Check your API keys or try again.');
-                history.pop();
-                return null;
-            }
-
-            // Extract and process SKILLS_JSON from the response
-            let displayText = result;
-            const skillsMatch = result.match(/SKILLS_JSON:\{[^\n]+\}/);
-            if (skillsMatch) {
-                try {
-                    const parsed = JSON.parse(skillsMatch[0].replace('SKILLS_JSON:', ''));
-                    if (Array.isArray(parsed.skills)) {
-                        parsed.skills.forEach(s => addSkill(s, parsed.context || ''));
+                var isOpen = false;
+                header.addEventListener('click', function() {
+                    isOpen = !isOpen;
+                    arrow.style.transform = isOpen ? 'rotate(180deg)' : '';
+                    grid.style.display = isOpen ? 'flex' : 'none';
+                    if (isOpen && !grid.dataset.loaded) {
+                        grid.dataset.loaded = '1';
+                        renderVideos(grid, ch.videos, ch.name);
                     }
-                } catch(e) { /* malformed JSON – silently ignore */ }
-                displayText = result.replace(/SKILLS_JSON:\{[^\n]+\}\n?/, '').trim();
-            }
-
-            history.push({ role: 'model', parts: [{ text: result }] }); // store original (with SKILLS_JSON)
-            persistHistory();
-            return displayText;
-        }
-
-        // ── M6. Chat UI helpers ──────────────────────────────────────
-
-        /** Appends a chat bubble to the coach message stream and auto-scrolls. */
-        function appendMessage(role, text) {
-            const msgs   = document.getElementById('coach-messages');
-            const row    = document.createElement('div');
-            row.className = 'coach-msg ' + role;
-            const bubble = document.createElement('div');
-            bubble.className = 'bubble';
-            bubble.innerHTML = (role === 'ai')
-                ? '<strong>AI Coach:</strong> ' + renderMarkdown(text)
-                : text; // user text is plain (not markdown)
-            row.appendChild(bubble);
-            msgs.appendChild(row);
-            msgs.scrollTop = msgs.scrollHeight;
-        }
-
-        function setTyping(on) {
-            const el = document.getElementById('coach-typing');
-            if (el) el.classList.toggle('hidden', !on);
-        }
-
-        // ── M7. History persistence ──────────────────────────────────
-
-        function persistHistory() {
-            try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); }
-            catch(e) { console.warn('Coach: could not persist history', e); }
-        }
-
-        function loadHistory() {
-            try {
-                const saved = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-                if (!Array.isArray(saved) || saved.length === 0) return;
-                history = saved;
-                const msgs = document.getElementById('coach-messages');
-                msgs.innerHTML = ''; // clear welcome message
-                history.forEach(msg => {
-                    let text = msg.parts[0].text;
-                    text = text.replace(/SKILLS_JSON:\{[^\n]+\}\n?/, '').trim(); // strip data tags from display
-                    appendMessage(msg.role === 'user' ? 'user' : 'ai', text);
-                });
-            } catch(e) { /* corrupt storage – start fresh */ }
-        }
-
-        // ── M8. Public API (bound to buttons in HTML) ────────────────
-
-        async function send() {
-            const input = document.getElementById('coach-input');
-            const text  = (input.value || '').trim();
-            if (!text) return;
-            input.value = '';
-            appendMessage('user', text);
-            setTyping(true);
-            const reply = await callCoach(text);
-            setTyping(false);
-            if (reply) appendMessage('ai', reply);
-        }
-
-        function newSession() {
-            if (!confirm('Start a new coaching session? Conversation will be cleared (skills are kept).')) return;
-            history = [];
-            localStorage.removeItem(HISTORY_KEY);
-            document.getElementById('coach-messages').innerHTML = '';
-            appendMessage('ai', 'New session started! What did you work on or accomplish today?');
-        }
-
-        function exportSkills() {
-            if (skills.length === 0) return alert('No skills logged yet.');
-            const lines = skills.map(s => '• ' + s.name + (s.context ? ' — ' + s.context : ''));
-            const text  = 'SKILLS DETECTED BY AI COACH\n' + new Date().toLocaleDateString('en-IN') + '\n\n' + lines.join('\n');
-            navigator.clipboard.writeText(text).catch(() => {});
-            alert('Skills list copied to clipboard!');
-        }
-
-        function clearSkills() {
-            if (!confirm('Clear all saved skills? This cannot be undone.')) return;
-            skills = [];
-            saveSkills();
-            renderSkills();
-        }
-
-        // ── M9. Init on load ─────────────────────────────────────────
-        window.addEventListener('load', () => {
-            // Wire Ctrl+Enter / Cmd+Enter shortcut
-            const input = document.getElementById('coach-input');
-            if (input) {
-                input.addEventListener('keydown', e => {
-                    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); send(); }
                 });
             }
-            loadSkills();
-            loadHistory();
-        });
 
-        return { send, newSession, exportSkills, clearSkills };
+            function renderVideos(grid, videos, channelName) {
+                videos.forEach(function(v) {
+                    var item = document.createElement('div');
+                    item.style.cssText = 'display:flex;align-items:flex-start;gap:10px;padding:8px 6px;border-radius:4px;cursor:pointer;transition:background .15s;border-bottom:1px solid rgba(0,0,0,0.07);';
+                    item.addEventListener('mouseover', function(){ item.style.background = 'rgba(0,0,0,0.05)'; });
+                    item.addEventListener('mouseout',  function(){ item.style.background = ''; });
 
-    })(); // end Coach
+                    var img = document.createElement('img');
+                    img.src = thumbUrl(v.vid);
+                    img.alt = '';
+                    img.loading = 'lazy';
+                    img.style.cssText = 'width:128px;height:72px;object-fit:cover;border-radius:3px;border:1px solid rgba(0,0,0,0.15);flex-shrink:0;';
+                    img.onerror = function(){ this.style.display = 'none'; };
 
+                    var info = document.createElement('div');
+                    info.style.cssText = 'flex:1;min-width:0;';
+                    info.innerHTML =
+                        '<div style="font-size:15px;font-weight:700;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">' + v.title + '</div>' +
+                        '<div style="font-size:12px;color:#6b7280;margin-top:4px;text-transform:uppercase;letter-spacing:.07em;">' + channelName + '</div>';
 
-    // ┌─────────────────────────────────────────────────────────────────┐
-    // │ N. THUNDER — FLOATING GLOBAL QUICK-ASK CHAT                    │
-    // │    Stateless per-session. History kept in memory (not persisted)│
-    // │    Uses same cascade engine as all other features.             │
-    // └─────────────────────────────────────────────────────────────────┘
+                    var btn = document.createElement('button');
+                    btn.innerHTML = '&#9654;';
+                    btn.style.cssText = 'width:36px;height:36px;background:#1a1a1a;color:#fff;border:none;border-radius:50%;font-size:14px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:transform .15s;';
+                    btn.addEventListener('mouseover', function(){ btn.style.transform = 'scale(1.1)'; });
+                    btn.addEventListener('mouseout',  function(){ btn.style.transform = ''; });
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        IVPlayer.open(v.vid, v.title, channelName);
+                    });
 
-    const Thunder = (() => {
+                    var analyzeBtn = document.createElement('button');
+                    analyzeBtn.className = 'btn-iv-analyze';
+                    analyzeBtn.textContent = 'âš¡ Analyse';
+                    analyzeBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        IVAnalyze.run(v.vid, v.title, channelName, analyzeBtn, item);
+                    });
 
-        let isOpen   = false;
-        let tHistory = []; // multi-turn context (session-only, not persisted)
+                    var actions = document.createElement('div');
+                    actions.style.cssText = 'display:flex;flex-direction:column;gap:5px;align-items:center;flex-shrink:0;';
+                    actions.appendChild(btn);
+                    actions.appendChild(analyzeBtn);
 
-        const SYSTEM_PROMPT =
-            'You are a concise, expert AI career coach and interview assistant. ' +
-            'Answer questions about interviews, resumes, salary negotiation, job hunting, ' +
-            'LinkedIn, behavioural questions, and career growth. ' +
-            'Keep answers sharp and actionable (under 200 words unless asked for more). ' +
-            'Use bullet points where helpful.';
-
-        // ── N1. Toggle panel visibility ──────────────────────────────
-        function toggle() {
-            isOpen = !isOpen;
-            document.getElementById('thunder-overlay').style.display = isOpen ? 'flex' : 'none';
-            if (isOpen) {
-                document.getElementById('thunder-badge').style.display = 'none';
-                setTimeout(() => document.getElementById('thunder-input')?.focus(), 80);
+                    item.appendChild(img);
+                    item.appendChild(info);
+                    item.appendChild(actions);
+                    item.addEventListener('click', function() { IVPlayer.open(v.vid, v.title, channelName); });
+                    grid.appendChild(item);
+                });
             }
-        }
 
-        // ── N2. Chat UI helpers ──────────────────────────────────────
-        function appendMsg(role, text) {
-            const msgs   = document.getElementById('thunder-messages');
-            const row    = document.createElement('div');
-            row.className = 'tmsg ' + role;
-            const bubble = document.createElement('div');
-            bubble.className = 'tbubble ' + role;
-            bubble.innerHTML = (role === 'ai')
-                ? renderMarkdown(text)
-                : text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-            row.appendChild(bubble);
-            msgs.appendChild(row);
-            msgs.scrollTop = msgs.scrollHeight;
-        }
+            // Build on DOM ready
+            window.addEventListener('load', function() {
+                var container = document.getElementById('video-channels-iv');
+                if (container) VIDEO_CHANNELS.forEach(function(ch){ buildVideoGroup(ch, container); });
+            });
+        })();
 
-        function setTyping(on) {
-            const el = document.getElementById('thunder-typing');
-            if (el) el.style.display = on ? 'block' : 'none';
-        }
+        // --- IVPlayer: YouTube embed overlay for Interview Videos ---
+        var IVPlayer = (function() {
+            var overlay = document.getElementById('iv-player-overlay');
+            var iframe  = document.getElementById('iv-player-iframe');
+            var pTitle  = document.getElementById('iv-p-title');
+            var pInfo   = document.getElementById('iv-p-info-title');
+            var pMeta   = document.getElementById('iv-p-info-meta');
+            var pLink   = document.getElementById('iv-p-yt-link');
 
-        // ── N3. Send message ─────────────────────────────────────────
-        async function send() {
-            const inp  = document.getElementById('thunder-input');
-            const text = (inp.value || '').trim();
-            if (!text) return;
-            inp.value = '';
+            function embedUrl(vid) { return 'https://www.youtube.com/embed/' + vid + '?autoplay=1&rel=0&modestbranding=1'; }
 
-            appendMsg('user', text);
-            tHistory.push({ role: 'user', parts: [{ text }] });
-            setTyping(true);
+            function open(vid, title, channel) {
+                iframe.src = embedUrl(vid);
+                pTitle.textContent = title;
+                pInfo.textContent  = title;
+                pMeta.textContent  = channel || '';
+                pLink.href = 'https://www.youtube.com/watch?v=' + vid;
+                overlay.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            }
 
-            if (_cachedKeys.length === 0) {
+            function close() {
+                overlay.style.display = 'none';
+                iframe.src = '';
+                document.body.style.overflow = '';
+            }
+
+            document.addEventListener('keydown', function(e){ if (e.key === 'Escape') close(); });
+            return { open: open, close: close };
+        })();
+
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // Daily AI Coach Module
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        var Coach = (function() {
+
+            var STORAGE_KEY_SKILLS = 'coach_skills_v1';
+            var STORAGE_KEY_HISTORY = 'coach_history_v1';
+            var history = [];   // [{role:'user'|'model', parts:[{text}]}]
+            var skills = [];    // [{name, context, date}]
+
+            // â”€â”€ Persistent skill store â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            function loadSkills() {
+                try { skills = JSON.parse(localStorage.getItem(STORAGE_KEY_SKILLS) || '[]'); } catch(e) { skills = []; }
+                renderSkills();
+            }
+            function saveSkills() {
+                localStorage.setItem(STORAGE_KEY_SKILLS, JSON.stringify(skills));
+            }
+            function addSkill(name, context) {
+                var norm = name.trim().toLowerCase();
+                if (!norm || skills.some(function(s){ return s.name.toLowerCase() === norm; })) return;
+                skills.push({ name: name.trim(), context: context || '', date: new Date().toLocaleDateString('en-IN') });
+                saveSkills();
+                renderSkills();
+            }
+            function renderSkills() {
+                var el = document.getElementById('coach-skills-list');
+                if (!el) return;
+                if (skills.length === 0) {
+                    el.innerHTML = '<span class="text-xs text-gray-400 italic">Skills detected by AI will appear here...</span>';
+                    return;
+                }
+                el.innerHTML = '';
+                skills.forEach(function(s) {
+                    var tag = document.createElement('span');
+                    tag.className = 'skill-tag';
+                    tag.title = s.context + ' (' + s.date + ')';
+                    tag.textContent = s.name;
+                    el.appendChild(tag);
+                });
+            }
+
+            // â”€â”€ System prompt for the coach â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            function buildSystemPrompt() {
+                var existing = skills.map(function(s){ return s.name; }).join(', ') || 'none yet';
+                return (
+                    'You are a rigorous, empathetic Daily AI Career Coach. ' +
+                    'Your job is a multi-stage conversation loop:\n' +
+                    '1. PROBE: When the user shares an activity or achievement, ask 2-3 specific follow-up questions to understand HOW they did it, what tools/methods they used, what outcome they drove.\n' +
+                    '2. ASSESS: After their responses, identify skill gaps. Be direct but constructive.\n' +
+                    '3. TRAIN: Suggest one concrete micro-exercise or resource to address the biggest gap. Keep it actionable, completable today or this week.\n' +
+                    '4. SKILL EXTRACT: At the end of each exchange where you have enough info, output a special JSON block EXACTLY like this on its own line, with NO markdown fences:\n' +
+                    'SKILLS_JSON:{"skills":["Skill A","Skill B"],"context":"one-line summary"}\n' +
+                    '5. RESUME ADVICE: Suggest 1-2 bullet points the user could add to their resume based on what they shared. Use action verbs and quantify where possible.\n' +
+                    '6. NEXT STEP: End each response by recommending what to work on or log tomorrow.\n\n' +
+                    'Already known skills (do not repeat): ' + existing + '\n' +
+                    'Keep responses focused, conversational, and encouraging. Do NOT dump everything at once â€” follow the stages naturally as the conversation develops. ' +
+                    'If the user seems stuck, give them a specific prompt to reflect on.'
+                );
+            }
+
+            // â”€â”€ Gemini multi-turn call â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            async function callCoach(userText) {
+                history.push({ role: 'user', parts: [{ text: userText }] });
+
+                var keys = _cachedKeys;
+                if (keys.length === 0) {
+                    appendMessage('ai', 'No API key configured. Please add your Gemini key in the API Settings tab.');
+                    history.pop();
+                    return;
+                }
+
+                var body = JSON.stringify({
+                    system_instruction: { parts: [{ text: buildSystemPrompt() }] },
+                    contents: history
+                });
+
+                var result = null;
+                for (var m = 0; m < MODEL_CASCADE.length && !result; m++) {
+                    var modelName = MODEL_CASCADE[m];
+                    for (var k = 0; k < keys.length && !result; k++) {
+                        try {
+                            var url = API_BASE_URL + modelName + ':generateContent?key=' + keys[k];
+                            var res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: body });
+                            if (res.ok) {
+                                var data = await res.json();
+                                var text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                                if (text) result = text;
+                            }
+                        } catch(e) { /* try next */ }
+                    }
+                }
+
+                if (!result) {
+                    appendMessage('ai', 'Could not reach the AI. Please check your API keys or try again.');
+                    history.pop();
+                    return;
+                }
+
+                // Parse and strip SKILLS_JSON line before displaying
+                var displayText = result;
+                var skillsMatch = result.match(/SKILLS_JSON:\{[^\n]+\}/);
+                if (skillsMatch) {
+                    try {
+                        var parsed = JSON.parse(skillsMatch[0].replace('SKILLS_JSON:', ''));
+                        if (parsed.skills && Array.isArray(parsed.skills)) {
+                            parsed.skills.forEach(function(s){ addSkill(s, parsed.context || ''); });
+                        }
+                    } catch(e) {}
+                    displayText = result.replace(/SKILLS_JSON:\{[^\n]+\}\n?/, '').trim();
+                }
+
+                history.push({ role: 'model', parts: [{ text: result }] });
+                persistHistory();
+                return displayText;
+            }
+
+            // â”€â”€ Chat UI helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            function appendMessage(role, text) {
+                var msgs = document.getElementById('coach-messages');
+                var row = document.createElement('div');
+                row.className = 'coach-msg ' + role;
+                var bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                if (role === 'ai') {
+                    bubble.innerHTML = '<strong>AI Coach:</strong> ' + renderMarkdown(text);
+                } else {
+                    bubble.textContent = text;
+                }
+                row.appendChild(bubble);
+                msgs.appendChild(row);
+                msgs.scrollTop = msgs.scrollHeight;
+            }
+
+            function setTyping(on) {
+                var el = document.getElementById('coach-typing');
+                if (el) el.classList.toggle('hidden', !on);
+            }
+
+            // â”€â”€ Persist / restore conversation history â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            function persistHistory() {
+                try { localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(history)); } catch(e) {}
+            }
+            function loadHistory() {
+                try {
+                    var saved = JSON.parse(localStorage.getItem(STORAGE_KEY_HISTORY) || '[]');
+                    if (!Array.isArray(saved) || saved.length === 0) return;
+                    history = saved;
+                    var msgs = document.getElementById('coach-messages');
+                    // Clear welcome msg, replay saved messages
+                    msgs.innerHTML = '';
+                    history.forEach(function(msg) {
+                        var text = msg.parts[0].text;
+                        // Strip SKILLS_JSON from replayed AI messages
+                        text = text.replace(/SKILLS_JSON:\{[^\n]+\}\n?/, '').trim();
+                        appendMessage(msg.role === 'user' ? 'user' : 'ai', text);
+                    });
+                } catch(e) {}
+            }
+
+            // â”€â”€ Public API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            async function send() {
+                var input = document.getElementById('coach-input');
+                var text = (input.value || '').trim();
+                if (!text) return;
+                input.value = '';
+                input.style.height = '';
+
+                appendMessage('user', text);
+                setTyping(true);
+
+                var reply = await callCoach(text);
                 setTyping(false);
-                appendMsg('ai', 'No API key saved. Please add your Gemini key in ⚙️ API Settings.');
-                return;
+                if (reply) appendMessage('ai', reply);
             }
 
-            const body = JSON.stringify({
-                system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-                contents:           tHistory,
-                generationConfig:   { temperature: 0.4, maxOutputTokens: 600 }
+            function newSession() {
+                if (!confirm('Start a new coaching session? The conversation will be cleared (skills are kept).')) return;
+                history = [];
+                localStorage.removeItem(STORAGE_KEY_HISTORY);
+                var msgs = document.getElementById('coach-messages');
+                msgs.innerHTML = '';
+                appendMessage('ai', "New session started! What did you work on or accomplish today?");
+            }
+
+            function exportSkills() {
+                if (skills.length === 0) return alert('No skills logged yet.');
+                var lines = skills.map(function(s){ return 'â€¢ ' + s.name + (s.context ? ' â€” ' + s.context : ''); });
+                var text = 'SKILLS DETECTED BY AI COACH\n' + new Date().toLocaleDateString('en-IN') + '\n\n' + lines.join('\n');
+                navigator.clipboard.writeText(text).catch(function(){});
+                alert('Skills list copied to clipboard!');
+            }
+
+            function clearSkills() {
+                if (!confirm('Clear all saved skills? This cannot be undone.')) return;
+                skills = [];
+                saveSkills();
+                renderSkills();
+            }
+
+            // â”€â”€ Auto-send on Ctrl+Enter / Cmd+Enter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            window.addEventListener('load', function() {
+                var input = document.getElementById('coach-input');
+                if (input) {
+                    input.addEventListener('keydown', function(e) {
+                        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); send(); }
+                    });
+                }
+                loadSkills();
+                loadHistory();
             });
 
-            let result = null;
-            for (const modelName of MODEL_CASCADE) {
-                if (result) break;
-                for (let k = 0; k < _cachedKeys.length && !result; k++) {
-                    const apiKey = getAvailableKey();
-                    if (!apiKey) break;
-                    try {
-                        const url = API_BASE_URL + modelName + ':generateContent?key=' + apiKey;
-                        const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body });
-                        if (res.ok) {
-                            const data = await res.json();
-                            const t = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-                            if (t) result = t;
-                        } else if (res.status === 429 || res.status === 403) {
-                            markKeyExhausted(apiKey);
-                        }
-                    } catch(e) { /* network – try next */ }
+            return { send: send, newSession: newSession, exportSkills: exportSkills, clearSkills: clearSkills };
+        })();
+
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // âš¡ Thunder â€“ Global AI Quick-Ask Chat
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        var Thunder = (function() {
+            var isOpen = false;
+            var tHistory = [];
+            var _videoCtx = '';
+            var _videoTitle = '';
+
+            var SYS_BASE = 'You are a concise, expert AI career coach and interview assistant. ' +
+                'Answer questions about interviews, resumes, salary negotiation, job hunting, ' +
+                'LinkedIn, behavioural questions, and career growth. ' +
+                'Keep answers sharp and actionable under 200 words unless asked for more. ' +
+                'Use bullet points where helpful.';
+
+            function getSys() {
+                return _videoCtx
+                    ? SYS_BASE + '\n\nVideo context â€” "' + _videoTitle + '":\n' + _videoCtx
+                    : SYS_BASE;
+            }
+
+            function setVideoContext(title, ctx) {
+                _videoTitle = title;
+                _videoCtx = ctx;
+                tHistory = [];
+                var msgs = document.getElementById('thunder-messages');
+                if (msgs) {
+                    var row = document.createElement('div');
+                    row.className = 'tmsg ai';
+                    var b = document.createElement('div');
+                    b.className = 'tbubble ai';
+                    b.innerHTML = 'ðŸ“¹ Video loaded: <b>' + title.replace(/</g,'&lt;') + '</b><br>Ask me anything about this interview topic!';
+                    row.appendChild(b);
+                    msgs.appendChild(row);
+                    msgs.scrollTop = msgs.scrollHeight;
+                }
+                if (!isOpen) toggle();
+            }
+
+            function toggle() {
+                isOpen = !isOpen;
+                var overlay = document.getElementById('thunder-overlay');
+                var badge   = document.getElementById('thunder-badge');
+                overlay.style.display = isOpen ? 'flex' : 'none';
+                if (isOpen) {
+                    badge.style.display = 'none';
+                    var inp = document.getElementById('thunder-input');
+                    if (inp) setTimeout(function(){ inp.focus(); }, 80);
                 }
             }
 
-            setTyping(false);
-            if (result) {
-                tHistory.push({ role: 'model', parts: [{ text: result }] });
-                appendMsg('ai', result);
-            } else {
-                appendMsg('ai', 'All models failed or quota exhausted. Check your API keys.');
+            function appendMsg(role, text) {
+                var msgs = document.getElementById('thunder-messages');
+                var row = document.createElement('div');
+                row.className = 'tmsg ' + role;
+                var bubble = document.createElement('div');
+                bubble.className = 'tbubble ' + role;
+                bubble.innerHTML = role === 'ai' ? renderMarkdown(text) : text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                row.appendChild(bubble);
+                msgs.appendChild(row);
+                msgs.scrollTop = msgs.scrollHeight;
             }
-        }
 
-        // Escape key closes the Thunder panel (only if no video overlay is open)
-        document.addEventListener('keydown', e => { if (e.key === 'Escape' && isOpen) toggle(); });
+            function setTyping(on) {
+                var el = document.getElementById('thunder-typing');
+                if (el) el.style.display = on ? 'block' : 'none';
+            }
 
-        return { toggle, send };
+            async function send() {
+                var inp = document.getElementById('thunder-input');
+                var text = (inp.value || '').trim();
+                if (!text) return;
+                inp.value = '';
+                appendMsg('user', text);
+                tHistory.push({ role: 'user', parts: [{ text: text }] });
+                setTyping(true);
 
-    })(); // end Thunder
+                if (_cachedKeys.length === 0) {
+                    setTyping(false);
+                    appendMsg('ai', 'No API key saved. Please add your Gemini key in the API Settings tab.');
+                    return;
+                }
 
+                var body = JSON.stringify({
+                    system_instruction: { parts: [{ text: getSys() }] },
+                    contents: tHistory,
+                    generationConfig: { temperature: 0.4, maxOutputTokens: 600 }
+                });
 
-    // ┌─────────────────────────────────────────────────────────────────┐
-    // │ O. PAGE-LOAD INITIALISATION                                     │
-    // │    Single consolidated load handler to avoid multiple           │
-    // │    addEventListener('load') calls competing for DOM readiness. │
-    // └─────────────────────────────────────────────────────────────────┘
+                var result = null;
+                for (var m = 0; m < MODEL_CASCADE.length && !result; m++) {
+                    for (var k = 0; k < _cachedKeys.length && !result; k++) {
+                        var apiKey = getAvailableKey();
+                        if (!apiKey) break;
+                        try {
+                            var url = API_BASE_URL + MODEL_CASCADE[m] + ':generateContent?key=' + apiKey;
+                            var res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: body });
+                            if (res.ok) {
+                                var data = await res.json();
+                                var t = data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text;
+                                if (t) result = t;
+                            } else if (res.status === 429 || res.status === 403) {
+                                markKeyExhausted(apiKey);
+                            }
+                        } catch(e) { /* try next */ }
+                    }
+                }
 
-    window.addEventListener('load', () => {
+                setTyping(false);
+                if (result) {
+                    tHistory.push({ role: 'model', parts: [{ text: result }] });
+                    appendMsg('ai', result);
+                } else {
+                    appendMsg('ai', 'All models failed or quota exhausted. Check your API keys.');
+                }
+            }
 
-        // O1. Restore API keys from localStorage into the API Settings inputs
-        const savedKeys = JSON.parse(localStorage.getItem('gemini_api_keys') || '[]');
-        _cachedKeys     = savedKeys;
-        _cachedKeyIndex = parseInt(localStorage.getItem('gemini_key_rotation_index') || '0', 10);
-        if (savedKeys[0]) document.getElementById('apiKey1').value = savedKeys[0];
-        if (savedKeys[1]) document.getElementById('apiKey2').value = savedKeys[1];
+            document.addEventListener('keydown', function(e){
+                if (e.key === 'Escape' && isOpen) toggle();
+            });
 
-        // O2. Master Resume → sync on first load (in case user refreshes mid-session)
-        // (The DOMContentLoaded listener in section F handles ongoing input events)
+            return { toggle: toggle, send: send, setVideoContext: setVideoContext };
+        })();
 
-        // NOTE: Coach and Video modules each register their own 'load' listeners above.
-        // They all fire on the same event; order is declaration order (Coach → Videos → here).
-    });
+        (function(){
+            var s = document.createElement('style');
+            s.textContent =
+                '.tmsg{display:flex;margin-bottom:2px;}' +
+                '.tmsg.user{justify-content:flex-end;}' +
+                '.tbubble{padding:8px 12px;border-radius:14px;font-size:13px;line-height:1.5;max-width:86%;}' +
+                '.tbubble.ai{background:#f3f4f6;border:1px solid #d1d5db;border-radius:14px 14px 14px 4px;}' +
+                '.tbubble.user{background:#1a1a1a;color:#f0e6d0;border-radius:14px 14px 4px 14px;}';
+            document.head.appendChild(s);
+        })();
 
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // âš¡ IV VIDEO ANALYZE MODULE â€” fileData YouTube URI approach
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        var IVAnalyze = (function() {
+            function renderHtml(data) {
+                var type   = Array.isArray(data.interview_type)    ? data.interview_type    : [data.interview_type||''];
+                var skills = Array.isArray(data.skills_covered)    ? data.skills_covered    : [data.skills_covered||''];
+                var kp     = Array.isArray(data.key_points)        ? data.key_points        : [];
+                var tw     = Array.isArray(data.takeaways)         ? data.takeaways         : [];
+                var st     = Array.isArray(data.how_to_apply)      ? data.how_to_apply      : [];
+                var qa     = Array.isArray(data.sample_questions)  ? data.sample_questions  : [];
+                return '<strong>ðŸ“‹ Summary</strong><p>'+(data.summary||'')+'</p>'+
+                    '<strong>ðŸŽ¯ Interview Type</strong><p>'+type.filter(Boolean).map(function(t){return '<span class="iv-tag">'+t+'</span>';}).join('')+'</p>'+
+                    '<strong>ðŸ›  Skills Covered</strong><p>'+skills.filter(Boolean).map(function(s){return '<span class="iv-tag">'+s+'</span>';}).join('')+'</p>'+
+                    '<strong>ðŸ”‘ Key Points</strong>'+kp.map(function(k){return '<p>â€¢ '+k+'</p>';}).join('')+
+                    '<strong>âœ… Takeaways</strong>'+tw.map(function(t){return '<p>â€¢ '+t+'</p>';}).join('')+
+                    '<strong>ðŸš€ How to Apply in Your Next Interview</strong>'+st.map(function(s,i){return '<p>'+(i+1)+'. '+s+'</p>';}).join('')+
+                    (qa.length?'<strong>â“ Sample Questions from This Video</strong>'+qa.map(function(q){return '<p>â€¢ '+q+'</p>';}).join(''):'')+
+                    '<div style="margin-top:8px;padding-top:8px;border-top:1px solid #d1d5db;font-size:11px;color:#6b7280;">âœ“ Analysed via Gemini Â· Tap âš¡ Thunder to probe deeper.</div>';
+            }
+
+            async function run(vid, title, channelName, btn, item) {
+                if (_cachedKeys.length === 0) { alert('Save your Gemini API key in the API Settings tab first.'); return; }
+
+                // Toggle existing panel
+                var next = item.nextElementSibling;
+                if (next && next.classList.contains('iv-ai-panel')) { next.classList.toggle('open'); return; }
+
+                var panel = document.createElement('div');
+                panel.className = 'iv-ai-panel open';
+                panel.innerHTML =
+                    '<div class="iv-ai-panel-hdr"><span>âš¡ AI Analysis</span>'+
+                    '<button class="iv-ai-panel-close" onclick="this.closest(\'.iv-ai-panel\').classList.remove(\'open\')">âœ•</button></div>'+
+                    '<div class="iv-ai-panel-body"><span class="iv-spin">âŸ³</span> Gemini is analysing the videoâ€¦</div>';
+                item.insertAdjacentElement('afterend', panel);
+                btn.classList.add('loading'); btn.textContent = 'âŸ³ â€¦';
+
+                var body = panel.querySelector('.iv-ai-panel-body');
+                var ytUrl = 'https://www.youtube.com/watch?v=' + vid;
+
+                var payload = {
+                    contents: [{
+                        parts: [
+                            { fileData: { mimeType: 'video/*', fileUri: ytUrl } },
+                            { text:
+                                'You are an expert interview coach and HR specialist.\n'+
+                                'Watch this interview preparation video carefully and analyse its ACTUAL content.\n\n'+
+                                'Return a JSON object with these exact keys:\n'+
+                                '"summary": 2-3 sentences on what this video specifically teaches,\n'+
+                                '"interview_type": array (e.g. HR Round, Behavioural, Technical, Salary Negotiation, Resume Tips, Soft Skills),\n'+
+                                '"skills_covered": array of specific skills or frameworks taught (e.g. STAR Method, Body Language, ATS Optimisation),\n'+
+                                '"key_points": array of 5 specific insights from this video,\n'+
+                                '"takeaways": array of 4 actionable takeaways a candidate should immediately implement,\n'+
+                                '"how_to_apply": array of 5-6 exact steps to apply these lessons in a real interview,\n'+
+                                '"sample_questions": array of 3-4 actual interview questions discussed or demonstrated in this video.\n'+
+                                'Pure JSON only. No markdown. Base everything on actual video content.'
+                            }
+                        ]
+                    }],
+                    generationConfig: { temperature: 0.2, maxOutputTokens: 2048 }
+                };
+
+                var models = ['gemini-2.5-pro', 'gemini-3.5-flash', 'gemini-2.5-flash'];
+                var finalResult = null;
+                var apiKey = getAvailableKey();
+
+                for (var m = 0; m < models.length && !finalResult; m++) {
+                    try {
+                        var res = await fetch(API_BASE_URL + models[m] + ':generateContent?key=' + apiKey,
+                            { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+                        var d = await res.json();
+                        if (res.ok) {
+                            var t = d.candidates && d.candidates[0] && d.candidates[0].content &&
+                                    d.candidates[0].content.parts && d.candidates[0].content.parts[0] && d.candidates[0].content.parts[0].text;
+                            if (t) finalResult = t;
+                        } else { console.warn('[IVAnalyze] '+models[m]+' HTTP '+res.status, d.error && d.error.message); }
+                    } catch(e) { console.warn('[IVAnalyze]', e.message); }
+                }
+
+                btn.classList.remove('loading'); btn.textContent = 'âš¡ Analyse';
+
+                if (!finalResult) {
+                    body.innerHTML = '<span style="color:#7a2020">âš  Analysis failed. Check API key in API Settings tab.</span>';
+                    return;
+                }
+
+                try {
+                    var clean = finalResult.replace(/```json|```/g,'').trim();
+                    var s2 = clean.indexOf('{'), e2 = clean.lastIndexOf('}');
+                    if (s2 !== -1 && e2 !== -1) clean = clean.substring(s2, e2+1);
+                    var parsed = JSON.parse(clean);
+                    body.innerHTML = renderHtml(parsed);
+                    Thunder.setVideoContext(title + ' (' + channelName + ')', clean);
+                } catch(err) {
+                    body.innerHTML = '<div style="white-space:pre-wrap;font-size:12px;">'+finalResult.replace(/</g,'&lt;')+'</div>';
+                    Thunder.setVideoContext(title, finalResult);
+                }
+            }
+
+            return { run: run };
+        })();
     </script>
+    <!-- âš¡ Floating Thunder AI Quick-Ask Button -->
+    <button id="thunder-btn" onclick="Thunder.toggle()" title="Quick AI Assistant"
+        style="position:fixed;bottom:24px;right:24px;z-index:8000;width:56px;height:56px;border-radius:50%;background:#1a1a1a;border:3px solid #f0e6d0;color:#f0e6d0;font-size:26px;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;transition:transform .2s,box-shadow .2s;"
+        onmouseover="this.style.transform='scale(1.12)';this.style.boxShadow='0 6px 28px rgba(0,0,0,0.6)'"
+        onmouseout="this.style.transform='';this.style.boxShadow='0 4px 20px rgba(0,0,0,0.45)'">
+        &#9889;
+    </button>
+    <div id="thunder-badge" style="position:fixed;bottom:72px;right:24px;z-index:8001;background:#ef4444;color:#fff;border-radius:999px;font-size:10px;font-weight:900;padding:2px 7px;display:none;pointer-events:none;">AI</div>
+
+    <!-- Thunder Chat Overlay -->
+    <div id="thunder-overlay" style="position:fixed;bottom:90px;right:24px;z-index:8002;width:370px;max-width:calc(100vw - 32px);background:#fff;border:2px solid #1a1a1a;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,0.35);display:none;flex-direction:column;overflow:hidden;max-height:520px;">
+        <!-- Header -->
+        <div style="background:#1a1a1a;color:#f0e6d0;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+            <span style="font-weight:900;font-size:15px;">&#9889; AI Quick Assistant</span>
+            <button onclick="Thunder.toggle()" style="background:none;border:none;color:#f0e6d0;font-size:18px;cursor:pointer;line-height:1;">&times;</button>
+        </div>
+        <!-- Messages -->
+        <div id="thunder-messages" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:200px;max-height:320px;background:#fafaf9;">
+            <div class="tmsg ai"><div class="tbubble ai">Hi! I&#39;m your quick AI assistant. Ask me anything about interviews, resumes, salary negotiation, or career advice.</div></div>
+        </div>
+        <!-- Typing -->
+        <div id="thunder-typing" style="display:none;padding:4px 12px;font-size:11px;color:#9ca3af;font-style:italic;flex-shrink:0;">AI is thinking...</div>
+        <!-- Input -->
+        <div style="border-top:1px solid #e5e7eb;padding:10px;display:flex;gap:8px;flex-shrink:0;background:#fff;">
+            <input id="thunder-input" type="text" placeholder="Ask anything..." style="flex:1;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;outline:none;"
+                onkeydown="if(event.key==='Enter')Thunder.send()">
+            <button onclick="Thunder.send()" style="background:#1a1a1a;color:#f0e6d0;border:none;padding:8px 14px;border-radius:6px;font-weight:900;font-size:13px;cursor:pointer;">&#9658;</button>
+        </div>
+    </div>
+
 </body>
 </html>

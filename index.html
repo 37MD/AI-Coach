@@ -660,8 +660,7 @@
             }
 
             const payload = {
-                systemInstruction: { parts: [{ text: systemInstruction }] },
-                contents: [{ parts: [{ text: userPrompt }] }],
+                contents: [{ parts: [{ text: systemInstruction + '\n\n' + userPrompt }] }],
                 generationConfig: { temperature: 0.3 }
             };
 
@@ -1586,9 +1585,14 @@ Output the improved resume only. No commentary.`;
                     return;
                 }
 
+                // Embed system prompt into the last user message (avoids system_instruction field issues)
+                var coachHistory = history.map(function(msg) { return { role: msg.role, parts: [{ text: msg.parts[0].text }] }; });
+                var lastIdx = coachHistory.length - 1;
+                if (lastIdx >= 0 && coachHistory[lastIdx].role === 'user') {
+                    coachHistory[lastIdx].parts[0].text = buildSystemPrompt() + '\n\nUSER:\n' + coachHistory[lastIdx].parts[0].text;
+                }
                 var body = JSON.stringify({
-                    system_instruction: { parts: [{ text: buildSystemPrompt() }] },
-                    contents: history
+                    contents: coachHistory
                 });
 
                 var result = null;
@@ -1812,26 +1816,28 @@ Output the improved resume only. No commentary.`;
                     return;
                 }
 
-                var body = JSON.stringify({
-                    system_instruction: { parts: [{ text: getSys() }] },
-                    contents: tHistory,
+                // Embed system prompt into the latest user message
+                var tH = tHistory.map(function(msg) { return { role: msg.role, parts: [{ text: msg.parts[0].text }] }; });
+                var lastIdx = tH.length - 1;
+                if (lastIdx >= 0 && tH[lastIdx].role === 'user') {
+                    tH[lastIdx].parts[0].text = getSys() + '\n\nUSER:\n' + tH[lastIdx].parts[0].text;
+                }
+                var payload = {
+                    contents: tH,
                     generationConfig: { temperature: 0.4, maxOutputTokens: 600 }
-                });
+                };
 
                 var result = null;
                 for (var m = 0; m < MODEL_CASCADE.length && !result; m++) {
                     for (var k = 0; k < _cachedKeys.length && !result; k++) {
-                        var apiKey = getAvailableKey();
-                        if (!apiKey) break;
+                        var apiKey = _cachedKeys[(m + k) % _cachedKeys.length];
                         try {
                             var url = API_BASE_URL + MODEL_CASCADE[m] + ':generateContent?key=' + apiKey;
-                            var res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: body });
+                            var res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
                             if (res.ok) {
                                 var data = await res.json();
                                 var t = data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text;
                                 if (t) result = t;
-                            } else if (res.status === 429 || res.status === 403) {
-                                markKeyExhausted(apiKey);
                             }
                         } catch(e) { /* try next */ }
                     }
@@ -2231,8 +2237,12 @@ Output the improved resume only. No commentary.`;
                     'RELEVANT RESUME SECTION:\n' + relevantChunk + '\n\n' +
                     'FULL RESUME (for reference):\n' + _resume.substring(0, 3000);
 
+                // Prepend system context to the last user message
+                var lastIdx = _history.length - 1;
+                if (lastIdx >= 0 && _history[lastIdx].role === 'user') {
+                    _history[lastIdx].parts[0].text = sysPrompt + '\n\nUSER QUESTION:\n' + _history[lastIdx].parts[0].text;
+                }
                 var payload = {
-                    systemInstruction: { parts: [{ text: sysPrompt }] },
                     contents: _history,
                     generationConfig: { temperature: 0.3, maxOutputTokens: 600 }
                 };

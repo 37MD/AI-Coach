@@ -1414,18 +1414,9 @@ Output the improved resume only. No commentary.`;
                         IVPlayer.open(v.vid, v.title, channelName);
                     });
 
-                    var analyzeBtn = document.createElement('button');
-                    analyzeBtn.className = 'btn-iv-analyze';
-                    analyzeBtn.textContent = '⚡ Analyse';
-                    analyzeBtn.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        IVAnalyze.run(v.vid, v.title, channelName, analyzeBtn, item);
-                    });
-
                     var actions = document.createElement('div');
-                    actions.style.cssText = 'display:flex;flex-direction:column;gap:5px;align-items:center;flex-shrink:0;';
+                    actions.style.cssText = 'display:flex;flex-direction:row;gap:5px;align-items:center;flex-shrink:0;';
                     actions.appendChild(btn);
-                    actions.appendChild(analyzeBtn);
 
                     item.appendChild(img);
                     item.appendChild(info);
@@ -2623,7 +2614,7 @@ Output the improved resume only. No commentary.`;
                 });
                 var hasTranscript = transcript.length > 200;
 
-                // Step 2: build payload — transcript text if available, else fileData
+                // Step 2: build payload — always use fileData (video URL) like SCPDD
                 var systemPrompt = 'You are an expert interview coach and HR specialist.\nAnalyse the following interview preparation video content.\n\n';
                 var userPrompt =
                     'Return a JSON object with these exact keys:\n'+
@@ -2636,25 +2627,24 @@ Output the improved resume only. No commentary.`;
                     '"sample_questions": array of 3-4 actual interview questions discussed or demonstrated in this video.\n'+
                     'Pure JSON only. No markdown. Base everything on actual content.';
 
-                var payload;
+                var promptText = systemPrompt + userPrompt;
                 if (hasTranscript) {
-                    body.innerHTML = '&#128270; Transcript found (' + transcript.length + ' chars). Analysing…';
-                    payload = {
-                        contents: [{ parts: [{ text: systemPrompt + '\n\nVIDEO TRANSCRIPT:\n' + transcript.substring(0, 8000) + '\n\n' + userPrompt }] }],
-                        generationConfig: { temperature: 0.2, maxOutputTokens: 2048 }
-                    };
-                } else {
-                    body.innerHTML = '&#128270; No transcript — sending video to Gemini…';
-                    payload = {
-                        contents: [{
-                            parts: [
-                                { fileData: { mimeType: 'video/*', fileUri: ytUrl } },
-                                { text: systemPrompt + userPrompt }
-                            ]
-                        }],
-                        generationConfig: { temperature: 0.2, maxOutputTokens: 2048 }
-                    };
+                    promptText = systemPrompt + 'Here is the video transcript to help your analysis:\n\n' + transcript.substring(0, 8000) + '\n\n' + userPrompt;
                 }
+
+                var payload = {
+                    contents: [{
+                        parts: [
+                            { fileData: { mimeType: 'video/*', fileUri: ytUrl } },
+                            { text: promptText }
+                        ]
+                    }],
+                    generationConfig: { temperature: 0.2, maxOutputTokens: 2048 }
+                };
+
+                body.innerHTML = hasTranscript
+                    ? '&#128270; Transcript found. Sending video + transcript to Gemini…'
+                    : '&#128270; Sending video to Gemini…';
 
                 // Step 3: cascade through models (isolated from main cascade exhaustion)
                 var finalResult = null;
@@ -2695,12 +2685,18 @@ Output the improved resume only. No commentary.`;
                     var clean = finalResult.replace(/```json|```/g,'').trim();
                     var s2 = clean.indexOf('{'), e2 = clean.lastIndexOf('}');
                     if (s2 !== -1 && e2 !== -1) clean = clean.substring(s2, e2+1);
+                    clean = clean.replace(/,(\s*[}\]])/g, '$1');
                     var parsed = JSON.parse(clean);
                     body.innerHTML = renderHtml(parsed, hasTranscript);
                     Thunder.setVideoContext(title + ' (' + channelName + ')', clean);
                 } catch(err) {
-                    var fallbackHtml = fmtRawToSections(finalResult);
-                    body.innerHTML = fallbackHtml;
+                    try {
+                        var reparsed = JSON.parse(clean);
+                        body.innerHTML = renderHtml(reparsed, hasTranscript);
+                    } catch(e2) {
+                        var fallbackHtml = fmtRawToSections(finalResult);
+                        body.innerHTML = fallbackHtml;
+                    }
                     Thunder.setVideoContext(title, finalResult);
                 }
             }

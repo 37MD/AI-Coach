@@ -3733,80 +3733,94 @@ Output the improved resume only. No commentary.`;
         // ═══════════════════════════════════════════════════════════════════
         var ResumeNews = (function() {
 
-            // ── State ────────────────────────────────────────────────────
-            var _topics       = { companies:[], industries:[], skills:[], market:[] };
-            var _activePills  = new Set();
-            var _feedSections = [];
-            var _activeFilter = 'all';
+            var _topics      = { companies:[], industries:[], skills:[], market:[] };
+            var _activePills = new Set();
+            var _feedSections= [];
+            var _activeFilter= 'all';
 
-            // ── DOM helpers ───────────────────────────────────────────────
-            function show(id)  { var el=document.getElementById(id); if(el) el.classList.remove('hidden'); }
-            function hide(id)  { var el=document.getElementById(id); if(el) el.classList.add('hidden'); }
-            function html(id,h){ var el=document.getElementById(id); if(el) el.innerHTML=h; }
+            function show(id)   { var el=document.getElementById(id); if(el) el.classList.remove('hidden'); }
+            function hide(id)   { var el=document.getElementById(id); if(el) el.classList.add('hidden'); }
+            function html(id,h) { var el=document.getElementById(id); if(el) el.innerHTML=h; }
             function setLoad(id,on){ var el=document.getElementById(id); if(el){ if(on) el.classList.add('active'); else el.classList.remove('active'); } }
             function escH(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+            function getMaster(){ return (localStorage.getItem('iv_master_resume')||'').trim(); }
 
-            function getMaster() { return (localStorage.getItem('iv_master_resume')||'').trim(); }
+            // Robust JSON extractor — strips all code-fence variants then parses
+            function rnParseJSON(raw) {
+                if (!raw) return null;
+                var clean = raw.replace(/```[a-zA-Z]*/g,'').replace(/```/g,'').trim();
+                var s = clean.indexOf('{');
+                var e = clean.lastIndexOf('}');
+                if (s === -1 || e <= s) return null;
+                return JSON.parse(clean.substring(s, e+1));
+            }
 
-            // ── STEP 1: AI extracts topics from resume ────────────────────
+            // Single AI call — reuses existing MODEL_CASCADE + _cachedKeys (no model changes)
+            async function rnCall(prompt) {
+                for (var m=0; m<MODEL_CASCADE.length; m++) {
+                    for (var k=0; k<_cachedKeys.length; k++) {
+                        var key = _cachedKeys[(m+k)%_cachedKeys.length];
+                        try {
+                            var payload = {
+                                contents:[{parts:[{text:prompt}]}],
+                                generationConfig:{temperature:0.3, maxOutputTokens:2048}
+                            };
+                            var res = await fetch(
+                                API_BASE_URL+MODEL_CASCADE[m]+':generateContent?key='+key,
+                                {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}
+                            );
+                            if (res.ok) {
+                                var d = await res.json();
+                                var t = d&&d.candidates&&d.candidates[0]&&d.candidates[0].content&&
+                                        d.candidates[0].content.parts&&d.candidates[0].content.parts[0]&&
+                                        d.candidates[0].content.parts[0].text;
+                                if (t) return t;
+                            } else if (res.status!==429&&res.status!==403) break;
+                        } catch(e){ console.warn('[RN]',e.message); }
+                    }
+                }
+                return null;
+            }
+
+            // STEP 1 — Extract topics from resume
             async function extractTopics() {
                 var resume = getMaster();
-                if (!resume) { alert('Please paste your Master Resume in Tab 1 first.'); return; }
-                if (_cachedKeys.length === 0) { alert('Please add your Gemini API Key in the API Settings tab.'); return; }
+                if (!resume) { alert('Paste your Master Resume in Tab 1 first.'); return; }
+                if (_cachedKeys.length===0) { alert('Add your Gemini API Key in the API Settings tab.'); return; }
 
                 setLoad('rn-extract-loading', true);
 
-                var sys = 'You are an expert career analyst and business intelligence researcher. ' +
-                    'Your job is to extract structured intelligence from a resume to build a personalised news brief.';
+                var p = [
+                    'You are a career analyst. Extract topics from the resume below to build a news feed.',
+                    'Return ONLY a raw JSON object — absolutely no markdown, no backticks, no explanation.',
+                    'Keys: companies (array, up to 8 real employer/client names searchable on Google News),',
+                    'industries (array, up to 6 sectors), skills (array, up to 8 specific tools/skills with news value),',
+                    'market (array, up to 6 India market/finance topics), career_summary (one sentence).',
+                    'Example shape: {"companies":["Hindustan Unilever","Nykaa"],"industries":["FMCG"],"skills":["D2C Marketing"],"market":["India FMCG Growth"],"career_summary":"Senior FMCG marketer."}',
+                    'RESUME:',
+                    resume.substring(0, 5000)
+                ].join('\n');
 
-                var prompt = 'Analyse this resume and extract the following for building a news feed.\n\n' +
-                    '<resume>\n' + resume.substring(0,6000) + '\n</resume>\n\n' +
-                    'Return a pure JSON object with EXACTLY these keys:\n' +
-                    '"companies": Array of up to 8 company names (past employers + well-known clients/brands mentioned). Use their common news-searchable names.\n' +
-                    '"industries": Array of up to 6 industry sectors this person has worked in (e.g. "FMCG", "Digital Marketing", "E-Commerce", "Financial Services", "EdTech"). Broad but specific.\n' +
-                    '"skills": Array of up to 8 high-value skills/technologies/tools that have active industry news (e.g. "Programmatic Advertising", "D2C E-Commerce", "AI in Marketing", "Mutual Funds", "Performance Marketing"). Avoid generic words.\n' +
-                    '"market": Array of up to 6 market/finance/business topics relevant to their career (e.g. "India FMCG Growth", "NSE BSE Market", "Digital Ad Spend India", "Naukri Job Market", "Startup Funding India"). These power financial and business news.\n' +
-                    '"person_name": The candidate full name if visible in resume (else empty string).\n' +
-                    '"career_summary": 1 sentence describing their career (e.g. "Senior digital marketing professional with FMCG and e-commerce background").\n' +
-                    'Pure JSON only. No markdown. No preamble.';
-
-                var result = null;
-                for (var m=0; m<MODEL_CASCADE.length && !result; m++) {
-                    for (var k=0; k<_cachedKeys.length && !result; k++) {
-                        var apiKey = _cachedKeys[(m+k) % _cachedKeys.length];
-                        try {
-                            var payload = { contents:[{parts:[{text: sys+'\n\n'+prompt}]}], generationConfig:{temperature:0.2,maxOutputTokens:1024} };
-                            var res = await fetch(API_BASE_URL+MODEL_CASCADE[m]+':generateContent?key='+apiKey, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-                            if (res.ok) {
-                                var d = await res.json();
-                                var t = d&&d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts&&d.candidates[0].content.parts[0]&&d.candidates[0].content.parts[0].text;
-                                if (t) result = t;
-                            } else if (res.status!==429&&res.status!==403) break;
-                        } catch(e) { console.warn('[ResumeNews]',e.message); }
-                    }
-                }
-
+                var raw = await rnCall(p);
                 setLoad('rn-extract-loading', false);
 
-                if (!result) { alert('Could not reach AI. Check API keys.'); return; }
+                if (!raw) { alert('Could not reach AI. Check API keys.'); return; }
 
-                try {
-                    var clean = result.replace(/```json|```/g,'').trim();
-                    var s=clean.indexOf('{'), e=clean.lastIndexOf('}');
-                    if(s!==-1&&e!==-1) clean=clean.substring(s,e+1);
-                    var parsed = JSON.parse(clean);
-                    _topics = {
-                        companies: parsed.companies||[],
-                        industries: parsed.industries||[],
-                        skills: parsed.skills||[],
-                        market: parsed.market||[]
-                    };
-                    window._rnCareerSummary = parsed.career_summary||'';
-                } catch(err) {
-                    _topics = { companies:[], industries:['Technology','Business'], skills:['Digital Marketing'], market:['India Business'] };
+                var parsed = null;
+                try { parsed = rnParseJSON(raw); } catch(err) {
+                    alert('Parse error in topic extraction.\n\nAI returned:\n' + raw.substring(0,300));
+                    return;
                 }
+                if (!parsed) { alert('Could not read topics.\n\nAI returned:\n' + raw.substring(0,300)); return; }
 
-                // Activate all pills by default
+                _topics = {
+                    companies:  Array.isArray(parsed.companies)  ? parsed.companies  : [],
+                    industries: Array.isArray(parsed.industries) ? parsed.industries : [],
+                    skills:     Array.isArray(parsed.skills)     ? parsed.skills     : [],
+                    market:     Array.isArray(parsed.market)     ? parsed.market     : []
+                };
+                window._rnSummary = parsed.career_summary || '';
+
                 _activePills = new Set();
                 ['companies','industries','skills','market'].forEach(function(cat){
                     (_topics[cat]||[]).forEach(function(t){ _activePills.add(cat+'::'+t); });
@@ -3817,22 +3831,20 @@ Output the improved resume only. No commentary.`;
                 show('rn-step2');
             }
 
-            // ── Render pill toggles ───────────────────────────────────────
             function renderPills() {
-                var tagColors = { companies:'rn-tag-company', industries:'rn-tag-industry', skills:'rn-tag-market', market:'rn-tag-report' };
                 ['companies','industries','skills','market'].forEach(function(cat) {
                     var wrap = document.getElementById('rn-pills-'+cat+'-wrap');
                     if (!wrap) return;
                     wrap.innerHTML = '';
                     var items = _topics[cat]||[];
-                    if (items.length === 0) { wrap.innerHTML='<span class="text-xs text-gray-400">None detected</span>'; return; }
+                    if (!items.length) { wrap.innerHTML='<span class="text-xs text-gray-400">None detected</span>'; return; }
                     items.forEach(function(item) {
                         var key = cat+'::'+item;
                         var pill = document.createElement('span');
-                        pill.className = 'rn-pill' + (_activePills.has(key)?' active':'');
+                        pill.className = 'rn-pill'+(_activePills.has(key)?' active':'');
                         pill.textContent = item;
-                        pill.onclick = function() {
-                            if (_activePills.has(key)) { _activePills.delete(key); pill.classList.remove('active'); }
+                        pill.onclick = function(){
+                            if (_activePills.has(key)){ _activePills.delete(key); pill.classList.remove('active'); }
                             else { _activePills.add(key); pill.classList.add('active'); }
                         };
                         wrap.appendChild(pill);
@@ -3841,91 +3853,134 @@ Output the improved resume only. No commentary.`;
             }
 
             function toggleAllPills() {
-                var total = 0, active = 0;
-                ['companies','industries','skills','market'].forEach(function(cat){ (_topics[cat]||[]).forEach(function(t){ total++; if(_activePills.has(cat+'::'+t)) active++; }); });
-                var doActivate = active < total;
+                var total=0, active=0;
+                ['companies','industries','skills','market'].forEach(function(cat){
+                    (_topics[cat]||[]).forEach(function(t){ total++; if(_activePills.has(cat+'::'+t)) active++; });
+                });
                 _activePills = new Set();
-                if (doActivate) {
-                    ['companies','industries','skills','market'].forEach(function(cat){ (_topics[cat]||[]).forEach(function(t){ _activePills.add(cat+'::'+t); }); });
+                if (active < total) {
+                    ['companies','industries','skills','market'].forEach(function(cat){
+                        (_topics[cat]||[]).forEach(function(t){ _activePills.add(cat+'::'+t); });
+                    });
                 }
                 renderPills();
             }
 
-            // ── STEP 2: Build feed using AI + Google News links ───────────
+            // STEP 2 — Load feed via 3 small focused AI calls
             async function loadFeed() {
-                if (_activePills.size === 0) { alert('Please select at least one topic pill.'); return; }
+                if (_activePills.size===0) { alert('Select at least one topic pill.'); return; }
                 setLoad('rn-feed-loading', true);
                 hide('rn-step3');
 
-                // Build active lists from pills
-                var sel = { companies:[], industries:[], skills:[], market:[] };
+                var sel = {companies:[],industries:[],skills:[],market:[]};
                 _activePills.forEach(function(key){
-                    var parts = key.split('::');
-                    if (sel[parts[0]]) sel[parts[0]].push(parts[1]);
+                    var parts=key.split('::');
+                    if(sel[parts[0]]) sel[parts[0]].push(parts[1]);
                 });
 
-                var sys = 'You are a senior financial journalist, business intelligence analyst, and career intelligence specialist for the Indian market.';
+                var sum  = window._rnSummary || 'Experienced Indian professional';
+                var co   = sel.companies.join(', ')  || 'General companies';
+                var ind  = sel.industries.join(', ') || 'General industry';
+                var sk   = sel.skills.join(', ')     || 'General skills';
+                var mkt  = sel.market.join(', ')     || 'Indian market';
 
-                var prompt = 'Generate a rich, structured news intelligence brief for a professional with this profile:\n' +
-                    '"' + (window._rnCareerSummary||'Experienced professional') + '"\n\n' +
-                    'Active topics:\n' +
-                    'Companies: ' + (sel.companies.join(', ')||'none') + '\n' +
-                    'Industries: ' + (sel.industries.join(', ')||'none') + '\n' +
-                    'Skills/Tech: ' + (sel.skills.join(', ')||'none') + '\n' +
-                    'Market/Finance: ' + (sel.market.join(', ')||'none') + '\n\n' +
-                    'Generate a JSON object with key "sections". Each section is a news category.\n' +
-                    'Return EXACTLY these sections (skip any with no relevant articles):\n' +
-                    '1. "Company News" — latest news on companies listed above (earnings, layoffs, expansions, leadership changes, controversies)\n' +
-                    '2. "Industry Intelligence" — sector trends, market shifts, regulatory changes in their industries\n' +
-                    '3. "Campaign & Brand Watch" — notable marketing campaigns, product launches, brand successes/failures in their space\n' +
-                    '4. "Competitor Moves" — key competitors and rival companies making news\n' +
-                    '5. "Market & Finance Radar" — stock performance, mutual fund sector news, IPOs, funding rounds relevant to their domain\n' +
-                    '6. "Industry Reports & Research" — recent reports, whitepapers, analyst notes (McKinsey, BCG, KPMG, Forrester, Kantar, Nielsen, SEBI, RBI, AMFI, NASSCOM etc.)\n' +
-                    '7. "Skills & Tech Trends" — new tools, AI developments, certifications, platforms making waves in their skill areas\n\n' +
-                    'For EACH section, provide 4-6 articles. Each article MUST have:\n' +
-                    '"title": Realistic, specific news headline (as if from Economic Times, Mint, Business Standard, Livemint, Marketing Week, Campaign India, Moneycontrol, etc.)\n' +
-                    '"source": Publication name (e.g. "Economic Times", "Campaign India", "Mint", "Business Standard", "Moneycontrol", "SEBI", "AMFI")\n' +
-                    '"snippet": 1-2 sentence summary of the news item. Be specific — include numbers, names, percentages.\n' +
-                    '"search_query": A precise Google News search query (5-8 words) the user can click to find this type of article. Make it highly specific.\n' +
-                    '"tag": One of: company|industry|campaign|competitor|market|report|skills\n' +
-                    '"date_hint": Approximate recency (e.g. "Jun 2025", "Last 30 days", "Q1 2025")\n\n' +
-                    'Pure JSON only. No markdown. The JSON structure:\n' +
-                    '{"sections":[{"name":"Company News","icon":"🏢","articles":[{...}]},...]}\n' +
-                    'Make ALL content highly relevant and specific to the topics provided. Prioritise Indian market context.';
+                var articleShape = '{"title":"...","source":"Publication name","snippet":"2 specific sentences with numbers","search_query":"5-7 word Google News query","tag":"company","date_hint":"Jun 2025"}';
 
-                var result = null;
-                for (var m=0; m<MODEL_CASCADE.length && !result; m++) {
-                    for (var k=0; k<_cachedKeys.length && !result; k++) {
-                        var apiKey = _cachedKeys[(m+k) % _cachedKeys.length];
-                        try {
-                            var payload = { contents:[{parts:[{text: sys+'\n\n'+prompt}]}], generationConfig:{temperature:0.4,maxOutputTokens:4096} };
-                            var res = await fetch(API_BASE_URL+MODEL_CASCADE[m]+':generateContent?key='+apiKey, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-                            if (res.ok) {
-                                var d = await res.json();
-                                var t = d&&d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts&&d.candidates[0].content.parts[0]&&d.candidates[0].content.parts[0].text;
-                                if (t) result = t;
-                            } else if (res.status!==429&&res.status!==403) break;
-                        } catch(e) { console.warn('[ResumeNews]',e.message); }
+                var batches = [
+                    {
+                        name: 'Company and Industry',
+                        prompt: [
+                            'Indian market business news analyst.',
+                            'Candidate: '+sum,
+                            'Companies: '+co,
+                            'Industries: '+ind,
+                            'Return ONLY raw JSON — no markdown, no backticks, no extra text.',
+                            'Structure: {"sections":[{"name":"Company News","articles":[...]},{"name":"Industry Intelligence","articles":[...]}]}',
+                            'Each articles array: 4 items shaped like: '+articleShape,
+                            'Company News: earnings, leadership changes, expansions, controversies for the companies listed.',
+                            'Industry Intelligence: sector trends, regulatory shifts, market data for the industries listed.',
+                            'Use real publication names. Include specific figures and company names.'
+                        ].join('\n')
+                    },
+                    {
+                        name: 'Campaigns and Market',
+                        prompt: [
+                            'Indian market business news analyst.',
+                            'Candidate: '+sum,
+                            'Companies: '+co,
+                            'Industries: '+ind,
+                            'Return ONLY raw JSON — no markdown, no backticks, no extra text.',
+                            'Structure: {"sections":[{"name":"Campaign and Brand Watch","articles":[...]},{"name":"Competitor Moves","articles":[...]},{"name":"Market and Finance Radar","articles":[...]}]}',
+                            'Each articles array: 4 items shaped like: '+articleShape,
+                            'Campaign and Brand Watch: ad campaigns, product launches, brand wins or failures.',
+                            'Competitor Moves: rival companies making news in the same sectors.',
+                            'Market and Finance Radar: stocks, mutual funds, IPOs, funding rounds in their domain.',
+                            'Use Campaign India, Moneycontrol, Economic Times, Livemint as sources.'
+                        ].join('\n')
+                    },
+                    {
+                        name: 'Reports and Tech',
+                        prompt: [
+                            'Indian market business intelligence researcher.',
+                            'Candidate: '+sum,
+                            'Skills and tools: '+sk,
+                            'Market topics: '+mkt,
+                            'Return ONLY raw JSON — no markdown, no backticks, no extra text.',
+                            'Structure: {"sections":[{"name":"Industry Reports and Research","articles":[...]},{"name":"Skills and Tech Trends","articles":[...]}]}',
+                            'Each articles array: 4 items shaped like: '+articleShape,
+                            'Industry Reports and Research: analyst reports, SEBI/RBI/AMFI circulars, Nielsen/Kantar/McKinsey/KPMG/NASSCOM findings.',
+                            'Skills and Tech Trends: new tools, AI advances, platforms disrupting their skill areas.',
+                            'Cite real report names, publication bodies, and specific statistics.'
+                        ].join('\n')
+                    }
+                ];
+
+                var iconMap = {
+                    'Company News':'🏢',
+                    'Industry Intelligence':'🌍',
+                    'Campaign and Brand Watch':'📢',
+                    'Competitor Moves':'⚔',
+                    'Market and Finance Radar':'📊',
+                    'Industry Reports and Research':'📋',
+                    'Skills and Tech Trends':'💡'
+                };
+
+                var loadEl = document.getElementById('rn-feed-loading');
+                var allSections = [];
+
+                for (var b=0; b<batches.length; b++) {
+                    if (loadEl) loadEl.textContent = 'Loading '+batches[b].name+' ('+(b+1)+' of 3)...';
+                    var raw = await rnCall(batches[b].prompt);
+                    if (!raw) { console.warn('[RN] batch '+b+' no response'); continue; }
+                    try {
+                        var parsed = rnParseJSON(raw);
+                        if (parsed && Array.isArray(parsed.sections)) {
+                            parsed.sections.forEach(function(sec){
+                                sec.icon = iconMap[sec.name]||'';
+                                allSections.push(sec);
+                            });
+                        } else {
+                            console.warn('[RN] batch '+b+' unexpected shape:', raw.substring(0,120));
+                        }
+                    } catch(err) {
+                        console.warn('[RN] batch '+b+' parse fail:', err.message, '| raw:', raw.substring(0,120));
                     }
                 }
 
                 setLoad('rn-feed-loading', false);
+                if (loadEl) loadEl.textContent = 'Generating your personalised news feed...';
 
-                if (!result) { alert('Feed generation failed. Check API keys.'); return; }
-
-                var parsed = null;
-                try {
-                    var clean = result.replace(/```json|```/g,'').trim();
-                    var si=clean.indexOf('{'), ei=clean.lastIndexOf('}');
-                    if(si!==-1&&ei!==-1) clean=clean.substring(si,ei+1);
-                    parsed = JSON.parse(clean);
-                } catch(err) {
-                    document.getElementById('rn-feed-container').innerHTML = '<div class="rn-empty">Could not parse feed. Please try again.</div>';
+                if (!allSections.length) {
+                    document.getElementById('rn-feed-container').innerHTML =
+                        '<div style="padding:24px;text-align:center;font-size:13px;">' +
+                        '<b>Could not load feed.</b><br><br>' +
+                        'Make sure your API key is saved in the API Settings tab, then click Load News Feed again.' +
+                        '</div>';
                     show('rn-step3');
                     return;
                 }
 
-                _feedSections = parsed.sections||[];
+                _feedSections = allSections;
                 _activeFilter = 'all';
                 renderFeed();
                 hide('rn-step2');
@@ -3933,57 +3988,49 @@ Output the improved resume only. No commentary.`;
                 window.scrollTo({top:0,behavior:'smooth'});
             }
 
-            // ── Render the feed ───────────────────────────────────────────
+            // Render the feed cards
             function tagClass(tag) {
-                var map = { company:'rn-tag-company', industry:'rn-tag-industry', campaign:'rn-tag-campaign', competitor:'rn-tag-competitor', market:'rn-tag-market', report:'rn-tag-report', skills:'rn-tag-industry' };
+                var map = {company:'rn-tag-company',industry:'rn-tag-industry',campaign:'rn-tag-campaign',competitor:'rn-tag-competitor',market:'rn-tag-market',report:'rn-tag-report',skills:'rn-tag-industry'};
                 return map[tag]||'rn-tag-industry';
             }
 
-            function googleNewsUrl(query) {
-                return 'https://news.google.com/search?q=' + encodeURIComponent(query) + '&hl=en-IN&gl=IN&ceid=IN:en';
-            }
-            function googleSearchUrl(query) {
-                return 'https://www.google.com/search?q=' + encodeURIComponent(query) + '&tbm=nws&tbs=qdr:m';
-            }
+            function gnUrl(q){ return 'https://news.google.com/search?q='+encodeURIComponent(q)+'&hl=en-IN&gl=IN&ceid=IN:en'; }
+            function gsUrl(q){ return 'https://www.google.com/search?q='+encodeURIComponent(q)+'&tbm=nws&tbs=qdr:m'; }
 
             function renderFeed() {
-                // Build category filter
                 var catFilter = document.getElementById('rn-cat-filter');
                 if (catFilter) {
                     catFilter.innerHTML = '';
                     var allBtn = document.createElement('span');
-                    allBtn.className = 'rn-pill' + (_activeFilter==='all'?' active':'');
+                    allBtn.className = 'rn-pill'+(_activeFilter==='all'?' active':'');
                     allBtn.textContent = 'All Sections';
                     allBtn.onclick = function(){ _activeFilter='all'; renderFeed(); };
                     catFilter.appendChild(allBtn);
                     _feedSections.forEach(function(sec){
                         var btn = document.createElement('span');
-                        btn.className = 'rn-pill' + (_activeFilter===sec.name?' active':'');
-                        btn.textContent = (sec.icon||'') + ' ' + sec.name;
+                        btn.className = 'rn-pill'+(_activeFilter===sec.name?' active':'');
+                        btn.textContent = (sec.icon||'')+' '+sec.name;
                         btn.onclick = function(){ _activeFilter=sec.name; renderFeed(); };
                         catFilter.appendChild(btn);
                     });
                 }
 
-                // Build feed
                 var container = document.getElementById('rn-feed-container');
                 if (!container) return;
                 container.innerHTML = '';
 
-                var totalArticles = 0;
-                var sectionsToShow = _activeFilter==='all' ? _feedSections : _feedSections.filter(function(s){ return s.name===_activeFilter; });
+                var total = 0;
+                var toShow = _activeFilter==='all' ? _feedSections : _feedSections.filter(function(s){ return s.name===_activeFilter; });
 
-                sectionsToShow.forEach(function(sec) {
+                toShow.forEach(function(sec){
                     if (!sec.articles||!sec.articles.length) return;
 
-                    // Section header
                     var hdr = document.createElement('div');
                     hdr.className = 'rn-section-hdr';
-                    hdr.innerHTML = '<span>' + escH((sec.icon||'')+ ' ' + sec.name) + '</span>' +
-                        '<a href="' + googleNewsUrl(sec.name + ' India 2025') + '" target="_blank" class="rn-refresh-btn">More &#8599;</a>';
+                    hdr.innerHTML = '<span>'+escH((sec.icon||'')+' '+sec.name)+'</span>'+
+                        '<a href="'+gnUrl(sec.name+' India 2025')+'" target="_blank" class="rn-refresh-btn">More &#8599;</a>';
                     container.appendChild(hdr);
 
-                    // Cards grid
                     var body = document.createElement('div');
                     body.className = 'rn-section-body';
                     var grid = document.createElement('div');
@@ -3991,48 +4038,35 @@ Output the improved resume only. No commentary.`;
                     body.appendChild(grid);
                     container.appendChild(body);
 
-                    sec.articles.forEach(function(art) {
-                        totalArticles++;
-                        var gnUrl  = googleNewsUrl(art.search_query||art.title);
-                        var gsUrl  = googleSearchUrl(art.search_query||art.title);
-
+                    sec.articles.forEach(function(art){
+                        total++;
                         var card = document.createElement('div');
                         card.className = 'rn-card';
-                        card.title = 'Click to search this news on Google News';
-                        card.onclick = function(){ window.open(gnUrl,'_blank'); };
-
+                        card.onclick = function(){ window.open(gnUrl(art.search_query||art.title),'_blank'); };
                         card.innerHTML =
-                            '<div><span class="rn-card-tag ' + tagClass(art.tag) + '">' + escH(art.tag||sec.name) + '</span></div>' +
-                            '<div class="rn-card-title">' + escH(art.title||'') + '</div>' +
-                            '<div class="rn-card-snippet">' + escH(art.snippet||'') + '</div>' +
-                            '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:7px;">' +
-                                '<span class="rn-card-source">&#128240; ' + escH(art.source||'') + ' &nbsp;&#183;&nbsp; ' + escH(art.date_hint||'Recent') + '</span>' +
-                                '<span style="display:flex;gap:6px;">' +
-                                    '<a href="' + gnUrl + '" target="_blank" onclick="event.stopPropagation()" class="rn-card-link" title="Search on Google News">&#127760; News</a>' +
-                                    '<a href="' + gsUrl + '" target="_blank" onclick="event.stopPropagation()" class="rn-card-link" title="Search Google">&#128269; Search</a>' +
-                                '</span>' +
+                            '<div><span class="rn-card-tag '+tagClass(art.tag)+'">'+escH(art.tag||'news')+'</span></div>'+
+                            '<div class="rn-card-title">'+escH(art.title||'')+'</div>'+
+                            '<div class="rn-card-snippet">'+escH(art.snippet||'')+'</div>'+
+                            '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:7px;">'+
+                                '<span class="rn-card-source">'+escH(art.source||'')+' &bull; '+escH(art.date_hint||'Recent')+'</span>'+
+                                '<span style="display:flex;gap:6px;">'+
+                                    '<a href="'+gnUrl(art.search_query||art.title)+'" target="_blank" onclick="event.stopPropagation()" class="rn-card-link">&#127760; News</a>'+
+                                    '<a href="'+gsUrl(art.search_query||art.title)+'" target="_blank" onclick="event.stopPropagation()" class="rn-card-link">&#128269; Search</a>'+
+                                '</span>'+
                             '</div>';
-
                         grid.appendChild(card);
                     });
                 });
 
-                html('rn-article-count', totalArticles + ' articles across ' + sectionsToShow.length + ' sections');
+                html('rn-article-count', total+' articles across '+toShow.length+' sections');
             }
 
-            // ── Controls ──────────────────────────────────────────────────
-            function refresh() {
-                show('rn-step2');
-                hide('rn-step3');
-            }
-
-            function backToTopics() {
-                show('rn-step2');
-                hide('rn-step3');
-            }
+            function refresh()       { show('rn-step2'); hide('rn-step3'); }
+            function backToTopics()  { show('rn-step2'); hide('rn-step3'); }
 
             return { extractTopics:extractTopics, loadFeed:loadFeed, refresh:refresh, backToTopics:backToTopics, toggleAllPills:toggleAllPills };
         })();
+
 
                 // 🏆 ANSWER COACH — Build Ideal Answer + Analyse User's Response
         // ═══════════════════════════════════════════════════════════════════

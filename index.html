@@ -1429,6 +1429,7 @@ Output the improved resume only. No commentary.`;
                         var panelId = 'iv-ap-' + v.vid;
                         if (!document.getElementById(panelId)) {
                             var p = document.createElement('div');
+                            p.className = 'iv-ai-panel';
                             p.id = panelId;
                             p.setAttribute('data-vid', v.vid);
                             p.setAttribute('data-title', v.title);

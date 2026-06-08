@@ -641,7 +641,7 @@
             }
 
             const payload = {
-                systemInstruction: { parts: [{ text: systemInstruction }] },
+                system_instruction: { parts: [{ text: systemInstruction }] },
                 contents: [{ parts: [{ text: userPrompt }] }],
                 generationConfig: { temperature: 0.3 }
             };

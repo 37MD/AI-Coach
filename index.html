@@ -84,10 +84,16 @@
         .iv-ai-panel-hdr{background:#1a1a1a;color:#f0e6d0;padding:8px 12px;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;display:flex;align-items:center;justify-content:space-between;}
         .iv-ai-panel-close{background:none;border:none;color:#f0e6d0;font-size:16px;cursor:pointer;line-height:1;}
         .iv-ai-panel-body{padding:12px;font-size:13px;line-height:1.65;color:#111;}
-        .iv-ai-panel-body strong{display:block;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:#1a1a1a;margin:10px 0 4px;}
         .iv-ai-panel-body strong:first-child{margin-top:0}
         .iv-ai-panel-body p{margin:0 0 4px;}
         .iv-tag{display:inline-block;background:#1a1a1a;color:#f0e6d0;border-radius:3px;padding:1px 8px;font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;margin:2px 3px 2px 0;}
+        .an-sec{border-bottom:1px solid rgba(0,0,0,.07);padding:10px 0;}
+        .an-sec:last-child{border-bottom:none;padding-bottom:0;}
+        .an-hdr{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:#1a1a1a;margin-bottom:5px;}
+        .an-body{font-size:13px;line-height:1.6;color:#111;}
+        .an-li{padding:2px 0 2px 14px;position:relative;}
+        .an-li::before{content:'•';position:absolute;left:0;color:#1a1a1a;}
+        .an-num{display:inline-block;width:18px;height:18px;background:#1a1a1a;color:#f0e6d0;border-radius:999px;text-align:center;font-size:10px;font-weight:900;line-height:18px;margin-right:6px;flex-shrink:0;}
         .iv-spin{display:inline-block;animation:iv-spin .8s linear infinite;}
         @keyframes iv-spin{to{transform:rotate(360deg)}}
     </style>
@@ -2452,21 +2458,105 @@ Output the improved resume only. No commentary.`;
         })(); // end VideoPipeline
 
         var IVAnalyze = (function() {
-            function renderHtml(data) {
+            function escH(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+            function renderHtml(data, hasTranscript) {
                 var type   = Array.isArray(data.interview_type)   ? data.interview_type   : [data.interview_type||''];
                 var skills = Array.isArray(data.skills_covered)   ? data.skills_covered   : [data.skills_covered||''];
                 var kp     = Array.isArray(data.key_points)       ? data.key_points       : [];
                 var tw     = Array.isArray(data.takeaways)        ? data.takeaways        : [];
                 var st     = Array.isArray(data.how_to_apply)     ? data.how_to_apply     : [];
                 var qa     = Array.isArray(data.sample_questions) ? data.sample_questions : [];
-                return '<strong>&#128203; Summary</strong><p>'+(data.summary||'')+'</p>'+
-                    '<strong>&#127919; Interview Type</strong><p>'+type.filter(Boolean).map(function(t){return '<span class="iv-tag">'+t+'</span>';}).join('')+'</p>'+
-                    '<strong>&#128736; Skills Covered</strong><p>'+skills.filter(Boolean).map(function(s){return '<span class="iv-tag">'+s+'</span>';}).join('')+'</p>'+
-                    '<strong>&#128273; Key Points</strong>'+kp.map(function(k){return '<p>• '+k+'</p>';}).join('')+
-                    '<strong>&#9989; Takeaways</strong>'+tw.map(function(t){return '<p>• '+t+'</p>';}).join('')+
-                    '<strong>&#128640; How to Apply in Your Next Interview</strong>'+st.map(function(s,i){return '<p>'+(i+1)+'. '+s+'</p>';}).join('')+
-                    (qa.length?'<strong>&#10067; Sample Questions from This Video</strong>'+qa.map(function(q){return '<p>• '+q+'</p>';}).join(''):'')+
-                    '<div style="margin-top:8px;padding-top:8px;border-top:1px solid #d1d5db;font-size:11px;color:#6b7280;">&#10003; Analysed via Gemini · Tap &#9889; Thunder to probe deeper.</div>';
+                var badge = hasTranscript
+                    ? '<div style="font-size:11px;color:#15803d;font-weight:700;margin-bottom:8px;">&#10003; Based on actual video transcript</div>'
+                    : '<div style="font-size:11px;color:#1a3a5c;font-weight:700;margin-bottom:8px;">&#10003; Analysed by Gemini AI</div>';
+                var out = badge;
+                out += '<div class="an-sec"><div class="an-hdr">&#128203; Summary</div><div class="an-body">' + (data.summary ? escH(data.summary) : '—') + '</div></div>';
+                if (type.filter(Boolean).length) {
+                    out += '<div class="an-sec"><div class="an-hdr">&#127919; Interview Type</div><div class="an-body">' +
+                        type.filter(Boolean).map(function(t){return '<span class="iv-tag">'+escH(t)+'</span>';}).join('') +
+                        '</div></div>';
+                }
+                if (skills.filter(Boolean).length) {
+                    out += '<div class="an-sec"><div class="an-hdr">&#128736; Skills Covered</div><div class="an-body">' +
+                        skills.filter(Boolean).map(function(s){return '<span class="iv-tag">'+escH(s)+'</span>';}).join('') +
+                        '</div></div>';
+                }
+                if (kp.length) {
+                    out += '<div class="an-sec"><div class="an-hdr">&#128273; Key Points</div><div class="an-body">' +
+                        kp.map(function(k){return '<div class="an-li">'+escH(k)+'</div>';}).join('') +
+                        '</div></div>';
+                }
+                if (tw.length) {
+                    out += '<div class="an-sec"><div class="an-hdr">&#9989; Takeaways</div><div class="an-body">' +
+                        tw.map(function(t){return '<div class="an-li">'+escH(t)+'</div>';}).join('') +
+                        '</div></div>';
+                }
+                if (st.length) {
+                    out += '<div class="an-sec"><div class="an-hdr">&#128640; How to Apply in Your Next Interview</div><div class="an-body">' +
+                        st.map(function(s,i){return '<div class="an-li"><span class="an-num">'+(i+1)+'</span>'+escH(s)+'</div>';}).join('') +
+                        '</div></div>';
+                }
+                if (qa.length) {
+                    out += '<div class="an-sec"><div class="an-hdr">&#10067; Sample Questions</div><div class="an-body">' +
+                        qa.map(function(q){return '<div class="an-li">'+escH(q)+'</div>';}).join('') +
+                        '</div></div>';
+                }
+                out += '<div style="margin-top:8px;padding-top:8px;border-top:1px solid #d1d5db;font-size:11px;color:#6b7280;">&#10003; Analysed via Gemini · Tap &#9889; Thunder to probe deeper.</div>';
+                return out;
+            }
+
+            function fmtRawToSections(raw) {
+                var html = '';
+                var cleaned = raw.replace(/```json|```/g,'').trim();
+                var s2 = cleaned.indexOf('{'), e2 = cleaned.lastIndexOf('}');
+                if (s2 !== -1 && e2 !== -1) cleaned = cleaned.substring(s2, e2+1);
+                if (cleaned.charAt(0) === '{' && cleaned.charAt(cleaned.length-1) === '}') {
+                    try {
+                        var obj = JSON.parse(cleaned);
+                        var map = { summary:'&#128203; Summary', interview_type:'&#127919; Interview Type', skills_covered:'&#128736; Skills Covered', key_points:'&#128273; Key Points', takeaways:'&#9989; Takeaways', how_to_apply:'&#128640; How to Apply', sample_questions:'&#10067; Sample Questions' };
+                        for (var k in map) {
+                            if (obj[k]) {
+                                html += '<div class="an-sec"><div class="an-hdr">' + map[k] + '</div><div class="an-body">';
+                                if (Array.isArray(obj[k])) {
+                                    obj[k].forEach(function(v){ html += '<div class="an-li">' + escH(v) + '</div>'; });
+                                } else {
+                                    html += escH(obj[k]);
+                                }
+                                html += '</div></div>';
+                            }
+                        }
+                        if (html) return html;
+                    } catch(e) {}
+                }
+                var lines = raw.split('\n');
+                var section = null, body = [];
+                function flush() {
+                    if (section && body.length) {
+                        html += '<div class="an-sec"><div class="an-hdr">' + escH(section) + '</div><div class="an-body">';
+                        body.forEach(function(l){
+                            l = l.trim(); if (!l) return;
+                            if (/^[-*•]\s/.test(l) || /^\d+[.)]\s/.test(l)) {
+                                html += '<div class="an-li">' + escH(l.replace(/^[-*•]\s+/, '').replace(/^\d+[.)]\s+/, '')) + '</div>';
+                            } else { html += escH(l) + '<br>'; }
+                        });
+                        html += '</div></div>';
+                    }
+                }
+                var sectionHeaders = ['summary','interview.type','skills.covered','key.point','takeaway','how.to.apply','sample.question','overview','analysis'];
+                lines.forEach(function(line){
+                    var l = line.trim();
+                    if (!l) return;
+                    var isHeader = false;
+                    for (var h = 0; h < sectionHeaders.length; h++) {
+                        if (new RegExp('^\\*{0,2}\\s*' + sectionHeaders[h].replace(/\./g, '[ .:\\-]') + '\\s*[:]?\\s*\\*{0,2}$', 'i').test(l)) { isHeader = true; break; }
+                    }
+                    if (isHeader) { flush(); section = l.replace(/[*:]/g,'').trim(); body = []; }
+                    else if (!section && /^[A-Z][A-Za-z\s]{2,40}:$/.test(l)) { flush(); section = l.replace(/:$/,'').trim(); body = []; }
+                    else { body.push(line); }
+                });
+                flush();
+                return html || '<div class="an-sec"><div class="an-body">' + escH(raw).replace(/\\n/g,'<br>') + '</div></div>';
             }
 
             // ── Transcript fetcher (SCPDD-style: multiple sources) ──────────
@@ -2602,15 +2692,11 @@ Output the improved resume only. No commentary.`;
                     var s2 = clean.indexOf('{'), e2 = clean.lastIndexOf('}');
                     if (s2 !== -1 && e2 !== -1) clean = clean.substring(s2, e2+1);
                     var parsed = JSON.parse(clean);
-                    body.innerHTML = renderHtml(parsed);
+                    body.innerHTML = renderHtml(parsed, hasTranscript);
                     Thunder.setVideoContext(title + ' (' + channelName + ')', clean);
                 } catch(err) {
-                    try {
-                        var reparsed = JSON.parse(clean);
-                        body.innerHTML = renderHtml(reparsed);
-                    } catch(e2) {
-                        body.innerHTML = '<div style="white-space:pre-wrap;font-size:12px;">'+finalResult.replace(/</g,'&lt;')+'</div>';
-                    }
+                    var fallbackHtml = fmtRawToSections(finalResult);
+                    body.innerHTML = fallbackHtml;
                     Thunder.setVideoContext(title, finalResult);
                 }
             }

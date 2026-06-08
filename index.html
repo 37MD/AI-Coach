@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI Interview & Career Coach</title>
+    <title>AI Interview & Career Coach v1</title>
     <!-- Tailwind CSS for mobile-first styling -->
     <script>
         window.tailwind = window.tailwind || {};
@@ -35,7 +35,7 @@
 <body class="p-4 md:p-8 max-w-4xl mx-auto">
 
     <header class="mb-6 border-b-2 border-black pb-4">
-        <h1 class="text-3xl font-bold mb-2">AI Career Coach</h1>
+        <h1 class="text-3xl font-bold mb-2">AI Career Coach <span class="text-lg font-normal text-gray-500">v1</span></h1>
         <p class="text-sm font-bold">Your personal interview prep, feedback, resume tailoring, grilling, and LinkedIn/Naukri job hunt assistant.</p>
     </header>
 
@@ -641,7 +641,7 @@
             }
 
             const payload = {
-                system_instruction: { parts: [{ text: systemInstruction }] },
+                systemInstruction: { parts: [{ text: systemInstruction }] },
                 contents: [{ parts: [{ text: userPrompt }] }],
                 generationConfig: { temperature: 0.3 }
             };
@@ -2215,6 +2215,195 @@ Output the improved resume only. No commentary.`;
 
             return { setContext: setContext, setContextSilent: setContextSilent, send: send, clear: clear };
         })();
+
+
+
+        // ═══════════════════════════════════════════════════════════════════
+        // VIDEO PIPELINE SANDBOX  (VideoPipeline)
+        // ═══════════════════════════════════════════════════════════════════
+        // PURPOSE: Pure engine for video splitting, transcript fetching,
+        //          chunking, and Map-Reduce combination.
+        //          Owns NO prompts — callers pass their own prompt text.
+        //          IVAnalyze and any future section calls this engine.
+        //
+        // PUBLIC API:
+        //   VideoPipeline.run(ytUrl, nativePrompt, mapPromptFn, reducePromptFn, apiKey, modelName)
+        //     Decides: native fileData (short/no transcript) OR Map-Reduce (long transcript)
+        //     Returns: Promise<string|null>
+        //
+        //   VideoPipeline.fetchTranscript(ytUrl)
+        //     Returns: Promise<string|null>  plain-text transcript, or null if unavailable
+        //
+        //   VideoPipeline.chunkText(text, maxChars)
+        //     Returns: string[]  overlapping chunks
+        //
+        //   VideoPipeline.mapReduce(chunks, mapPromptFn, reducePromptFn, apiKey, modelName)
+        //     Returns: Promise<string|null>  final reduced result
+        // ═══════════════════════════════════════════════════════════════════
+
+        var VideoPipeline = (function() {
+
+            // ── Constants ────────────────────────────────────────────────
+            var CHUNK_SIZE    = 6000;  // chars per map chunk
+            var CHUNK_OVERLAP = 400;   // overlap chars between chunks (preserve context)
+            var NATIVE_LIMIT  = 900;   // transcript below this → use native fileData
+
+            // ── Internal: isolated Gemini fetch ──────────────────────────
+            // Completely separate from callGemini() — a bug in the main
+            // cascade cannot affect the video pipeline and vice versa.
+            async function _call(payload, apiKey, modelName) {
+                var url = API_BASE_URL + modelName + ':generateContent?key=' + apiKey;
+                try {
+                    var res = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!res.ok) {
+                        console.warn('[VideoPipeline] HTTP ' + res.status + ' on ' + modelName);
+                        return null;
+                    }
+                    var d = await res.json();
+                    var c = d.candidates;
+                    return (c && c[0] && c[0].content && c[0].content.parts && c[0].content.parts[0] && c[0].content.parts[0].text) || null;
+                } catch (e) {
+                    console.warn('[VideoPipeline] fetch error:', e.message);
+                    return null;
+                }
+            }
+
+            // ── 1. Transcript Fetcher ─────────────────────────────────────
+            // Uses YouTube timedtext endpoint (works for auto-generated captions, no auth).
+            // Returns plain text or null if captions unavailable.
+            async function fetchTranscript(ytUrl) {
+                var vidId = _extractVid(ytUrl);
+                if (!vidId) return null;
+                var captionUrl = 'https://www.youtube.com/api/timedtext?lang=en&v=' + vidId + '&fmt=srv3';
+                try {
+                    var r = await fetch(captionUrl);
+                    if (r.ok) {
+                        var xml = await r.text();
+                        var text = xml
+                            .replace(/<[^>]+>/g, ' ')
+                            .replace(/&amp;/g, '&')
+                            .replace(/&lt;/g, '<')
+                            .replace(/&gt;/g, '>')
+                            .replace(/&quot;/g, '"')
+                            .replace(/&#39;/g, "'")
+                            .replace(/\s+/g, ' ')
+                            .trim();
+                        if (text.length > 100) {
+                            console.log('[VideoPipeline] Transcript: ' + text.length + ' chars');
+                            return text;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('[VideoPipeline] timedtext failed:', e.message);
+                }
+                console.warn('[VideoPipeline] No transcript — will use native fileData');
+                return null;
+            }
+
+            // ── 2. Text Chunker ───────────────────────────────────────────
+            // Splits text into overlapping windows so boundary context is preserved.
+            function chunkText(text, maxChars) {
+                maxChars = maxChars || CHUNK_SIZE;
+                var chunks = [];
+                var start = 0;
+                while (start < text.length) {
+                    var end = Math.min(start + maxChars, text.length);
+                    chunks.push(text.slice(start, end));
+                    if (end === text.length) break;
+                    start = end - CHUNK_OVERLAP;
+                }
+                return chunks;
+            }
+
+            // ── 3. Map-Reduce Engine ──────────────────────────────────────
+            // MAP:    mapPromptFn(chunk, chunkIndex, totalChunks) → prompt string
+            //         Each chunk sent independently → partial result
+            // REDUCE: reducePromptFn(allPartialsCombined) → prompt string
+            //         All partials combined into final output
+            async function mapReduce(chunks, mapPromptFn, reducePromptFn, apiKey, modelName) {
+                console.log('[VideoPipeline] Map-Reduce: ' + chunks.length + ' chunks, model: ' + modelName);
+
+                // MAP phase
+                var partials = [];
+                for (var i = 0; i < chunks.length; i++) {
+                    var mapPrompt = mapPromptFn(chunks[i], i + 1, chunks.length);
+                    var mapPayload = {
+                        contents: [{ parts: [{ text: mapPrompt }] }],
+                        generationConfig: { temperature: 0.1, maxOutputTokens: 1024 }
+                    };
+                    var partial = await _call(mapPayload, apiKey, modelName);
+                    if (partial) {
+                        partials.push('--- Chunk ' + (i + 1) + ' of ' + chunks.length + ' ---\n' + partial);
+                        console.log('[VideoPipeline] Map ' + (i + 1) + '/' + chunks.length + ' done');
+                    }
+                }
+
+                if (partials.length === 0) {
+                    console.warn('[VideoPipeline] All map chunks failed');
+                    return null;
+                }
+
+                // REDUCE phase
+                var combined = partials.join('\n\n');
+                var reducePrompt = reducePromptFn(combined);
+                var reducePayload = {
+                    contents: [{ parts: [{ text: reducePrompt }] }],
+                    generationConfig: { temperature: 0.2, maxOutputTokens: 2048 }
+                };
+                var final = await _call(reducePayload, apiKey, modelName);
+                console.log('[VideoPipeline] Reduce done. Output: ' + (final ? final.length : 0) + ' chars');
+                return final;
+            }
+
+            // ── 4. Main Run ───────────────────────────────────────────────
+            // Caller passes:
+            //   nativePrompt    — prompt text when using native fileData path
+            //   mapPromptFn     — function(chunk, idx, total) → string, for Map phase
+            //   reducePromptFn  — function(allPartials) → string, for Reduce phase
+            async function run(ytUrl, nativePrompt, mapPromptFn, reducePromptFn, apiKey, modelName) {
+                var transcript = await fetchTranscript(ytUrl);
+
+                if (!transcript || transcript.length < NATIVE_LIMIT) {
+                    // Short/no transcript: send video URL directly to Gemini (native understanding)
+                    console.log('[VideoPipeline] Native fileData path for: ' + ytUrl);
+                    var nativePayload = {
+                        contents: [{
+                            parts: [
+                                { fileData: { mimeType: 'video/*', fileUri: ytUrl } },
+                                { text: nativePrompt }
+                            ]
+                        }],
+                        generationConfig: { temperature: 0.2, maxOutputTokens: 2048 }
+                    };
+                    return await _call(nativePayload, apiKey, modelName);
+                }
+
+                // Long transcript: chunk and Map-Reduce
+                console.log('[VideoPipeline] Map-Reduce path. Transcript: ' + transcript.length + ' chars');
+                var chunks = chunkText(transcript, CHUNK_SIZE);
+                return await mapReduce(chunks, mapPromptFn, reducePromptFn, apiKey, modelName);
+            }
+
+            // ── Helper ────────────────────────────────────────────────────
+            function _extractVid(url) {
+                var m = url.match(/[?&]v=([^&]+)/) || url.match(/youtu\.be\/([^?&]+)/);
+                return m ? m[1] : null;
+            }
+
+            // ── Public API ────────────────────────────────────────────────
+            return {
+                run:             run,
+                fetchTranscript: fetchTranscript,
+                chunkText:       chunkText,
+                mapReduce:       mapReduce
+            };
+
+        })(); // end VideoPipeline
+
         var IVAnalyze = (function() {
             function renderHtml(data) {
                 var type   = Array.isArray(data.interview_type)   ? data.interview_type   : [data.interview_type||''];

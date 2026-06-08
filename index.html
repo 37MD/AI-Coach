@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AI Interview & Career Coach</title>
     <!-- Tailwind CSS for mobile-first styling -->
@@ -63,26 +62,11 @@
             border-radius:4px; padding:2px 10px; font-size:11px; font-weight:700;
             letter-spacing:.06em; text-transform:uppercase;
         }
-        /* ⚡ Analyse button & panel */
-        .btn-iv-analyze{background:#1a1a1a;color:#f0e6d0;border:none;border-radius:4px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;padding:4px 9px;cursor:pointer;white-space:nowrap;transition:opacity .15s;flex-shrink:0;}
-        .btn-iv-analyze:hover{opacity:.78}
-        .btn-iv-analyze.loading{background:#6b7280;cursor:wait}
-        .iv-ai-panel{display:none;margin:4px 0 8px;border:2px solid #1a1a1a;border-radius:6px;overflow:hidden;background:#f9f7f4;}
-        .iv-ai-panel.open{display:block}
-        .iv-ai-panel-hdr{background:#1a1a1a;color:#f0e6d0;padding:8px 12px;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;display:flex;align-items:center;justify-content:space-between;}
-        .iv-ai-panel-close{background:none;border:none;color:#f0e6d0;font-size:16px;cursor:pointer;line-height:1;}
-        .iv-ai-panel-body{padding:12px;font-size:13px;line-height:1.65;color:#111;}
-        .iv-ai-panel-body strong{display:block;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:#1a1a1a;margin:10px 0 4px;}
-        .iv-ai-panel-body strong:first-child{margin-top:0}
-        .iv-ai-panel-body p{margin:0 0 4px;}
-        .iv-tag{display:inline-block;background:#1a1a1a;color:#f0e6d0;border-radius:3px;padding:1px 8px;font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;margin:2px 3px 2px 0;}
-        .iv-spin{display:inline-block;animation:iv-spin .8s linear infinite;}
-        @keyframes iv-spin{to{transform:rotate(360deg)}}
     </style>
     <div class="border-b-2 border-black mb-6">
         <nav class="flex flex-wrap" aria-label="Tabs" role="tablist">
             <button onclick="switchTab('master')" id="btn-master" role="tab" aria-selected="true" aria-controls="master" class="tab-btn tab-active py-2 px-4 font-bold border border-black rounded-t-lg bg-gray-100 mr-1 mb-0">
-                &#128196; Master Resume
+                ðŸ“„ Master Resume
             </button>
             <button onclick="switchTab('hunt')" id="btn-hunt" role="tab" aria-selected="false" aria-controls="hunt" class="tab-btn py-2 px-4 font-bold border border-black rounded-t-lg hover:bg-gray-200 bg-gray-300 mr-1 mb-0">
                 Job Hunt
@@ -100,10 +84,10 @@
                 Resume Grilling
             </button>
             <button onclick="switchTab('videos')" id="btn-videos" role="tab" aria-selected="false" aria-controls="videos" class="tab-btn py-2 px-4 font-bold border border-black rounded-t-lg hover:bg-gray-200 bg-gray-300 mr-1 mb-0">
-                &#127909; IV Videos
+                ðŸŽ¥ IV Videos
             </button>
             <button onclick="switchTab('coach')" id="btn-coach" role="tab" aria-selected="false" aria-controls="coach" class="tab-btn py-2 px-4 font-bold border border-black rounded-t-lg hover:bg-gray-200 bg-gray-300 mr-1 mb-0">
-                &#129504; Daily AI Coach
+                ðŸ§  Daily AI Coach
             </button>
             <button onclick="switchTab('api-settings')" id="btn-api-settings" role="tab" aria-selected="false" aria-controls="api-settings" class="tab-btn py-2 px-4 font-bold border border-black rounded-t-lg hover:bg-gray-200 bg-gray-300 mb-0">
                 API Settings
@@ -113,49 +97,179 @@
 
     <!-- Master Resume Tab -->
     <section id="master" class="tab-content active bg-gray-100 p-6 rounded shadow border border-black">
-        <div class="flex items-center justify-between mb-4">
-            <h2 class="text-2xl font-bold">&#128196; Master Resume</h2>
-            <span id="masterSavedBadge" class="hidden text-xs font-bold px-3 py-1 rounded-full border" style="background:#dcfce7;color:#15803d;border-color:#16a34a;">&#10003; Saved</span>
-        </div>
-        <p class="mb-4 text-sm">Paste your resume once here. It will auto-fill the resume field in all other tabs. <span class="font-bold" style="color:#15803d;">Auto-saved to your device.</span></p>
+        <h2 class="text-2xl font-bold mb-4">ðŸ“„ Master Resume</h2>
+        <p class="mb-4 text-sm">Paste your resume once here. It will auto-fill the resume field in all other tabs.</p>
         <textarea id="masterResume" rows="18" class="w-full p-2 border border-black rounded bg-gray-50" placeholder="Paste your full resume here..."></textarea>
     </section>
 
-    <!-- Job Hunt Strategy Tab (Optimized for LinkedIn & Naukri.com) -->
+    <!-- Job Hunt Strategy Tab -->
     <section id="hunt" class="tab-content bg-gray-100 p-6 rounded shadow border border-black">
-        <h2 class="text-2xl font-bold mb-4">LinkedIn & Naukri Job Hunt Strategy</h2>
-        <p class="mb-4 text-sm font-bold">Paste your resume and target location. The AI will analyze your profile and construct specialized keywords, search queries, and optimization strategies specifically engineered for LinkedIn and Naukri.com.</p>
-        
-        <div class="space-y-4">
+        <h2 class="text-2xl font-bold mb-1">ðŸŽ¯ Job Hunt Command Centre</h2>
+        <p class="mb-5 text-sm">Four AI tools that work together: score your ATS fitness, generate precision search links, score any job you find, and get a company hit list â€” all without leaving the page.</p>
+
+        <!-- â”€â”€ SHARED INPUTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <div class="bg-gray-200 border border-black rounded p-4 mb-5 space-y-3">
+            <h3 class="font-bold text-sm uppercase tracking-wide mb-2">ðŸ“‹ Your Profile (used by all tools below)</h3>
             <div>
-                <label class="block font-bold mb-1">Your Current Resume (Paste Text):</label>
-                <textarea id="huntResume" rows="4" class="w-full p-2 border border-black rounded bg-gray-50"></textarea>
+                <label class="block font-bold text-sm mb-1">Resume:</label>
+                <textarea id="huntResume" rows="5" class="w-full p-2 border border-black rounded bg-gray-50 text-sm" placeholder="Paste your resume here (auto-filled from Master Resume tab)..."></textarea>
             </div>
-            <div>
-                <label class="block font-bold mb-1">Target Location (e.g., Mumbai, India):</label>
-                <input type="text" id="huntLocation" class="w-full p-2 border border-black rounded bg-gray-50" placeholder="Enter target city/country">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                    <label class="block font-bold text-sm mb-1">Target City:</label>
+                    <input type="text" id="huntLocation" class="w-full p-2 border border-black rounded bg-gray-50 text-sm" placeholder="e.g. Mumbai, Bengaluru">
+                </div>
+                <div>
+                    <label class="block font-bold text-sm mb-1">Target Industry / Role:</label>
+                    <input type="text" id="huntIndustry" class="w-full p-2 border border-black rounded bg-gray-50 text-sm" placeholder="e.g. B2B SaaS Sales, Digital Marketing">
+                </div>
+                <div>
+                    <label class="block font-bold text-sm mb-1">Work Preference:</label>
+                    <input type="text" id="huntAvailability" class="w-full p-2 border border-black rounded bg-gray-50 text-sm" placeholder="e.g. Hybrid, Remote, Immediate">
+                </div>
             </div>
-            <div>
-                <label class="block font-bold mb-1">Availability / Work Preference:</label>
-                <input type="text" id="huntAvailability" class="w-full p-2 border border-black rounded bg-gray-50" placeholder="e.g., Immediate, Remote only, Hybrid, Willing to relocate">
-            </div>
-            <button onclick="generateJobHuntStrategy()" class="w-full bg-indigo-300 hover:bg-indigo-400 border border-black font-bold py-3 rounded">Generate LinkedIn & Naukri Strategy</button>
-            <div id="huntLoading" class="loading mt-2 font-bold">Analyzing profile for LinkedIn & Naukri optimization... please wait.</div>
         </div>
-        
-        <div id="huntOutput" class="mt-6 hidden">
-            <div class="flex justify-between items-center mb-1">
-                <span class="font-bold text-sm">Result</span>
-                <button onclick="copyOutput('huntOutputContent')" class="text-xs border border-black px-2 py-1 rounded bg-gray-300 hover:bg-gray-400 font-bold">&#128203; Copy</button>
+
+        <!-- â”€â”€ TOOL GRID â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+
+            <!-- Tool 1: ATS Resume Scorer -->
+            <div class="bg-white border border-black rounded p-4">
+                <h3 class="font-bold mb-1">âš¡ Tool 1 â€” ATS Resume Scorer</h3>
+                <p class="text-xs text-gray-600 mb-3">AI scores your resume for ATS fitness for your target role, lists missing keywords, and gives a rewrite action list.</p>
+                <button onclick="Hunt.scoreATS()" class="w-full bg-indigo-300 hover:bg-indigo-400 border border-black font-bold py-2 rounded text-sm">Score My ATS Fitness â†’</button>
+                <div id="huntATSLoading" class="loading text-xs mt-1 font-bold">Scoring ATS fitness...</div>
+                <div id="huntATSOutput" class="hidden mt-3">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="font-bold text-xs">ATS Report</span>
+                        <button onclick="copyOutput('huntATSContent')" class="text-xs border border-black px-2 py-1 rounded bg-gray-200 hover:bg-gray-300 font-bold">ðŸ“‹</button>
+                    </div>
+                    <div id="huntATSContent" class="p-3 bg-gray-50 border border-gray-300 rounded text-sm leading-relaxed"></div>
+                </div>
             </div>
-            <div id="huntOutputContent" class="p-4 bg-gray-200 border border-black rounded font-normal text-sm leading-relaxed"></div>
+
+            <!-- Tool 2: Search Link Generator -->
+            <div class="bg-white border border-black rounded p-4">
+                <h3 class="font-bold mb-1">ðŸ” Tool 2 â€” Search Link Generator</h3>
+                <p class="text-xs text-gray-600 mb-3">Generates AI-crafted Boolean search strings + clickable Naukri and LinkedIn URLs pre-loaded with the right keywords for your profile.</p>
+                <button onclick="Hunt.generateSearchLinks()" class="w-full bg-blue-300 hover:bg-blue-400 border border-black font-bold py-2 rounded text-sm">Generate Search Links â†’</button>
+                <div id="huntLinksLoading" class="loading text-xs mt-1 font-bold">Building search strings...</div>
+                <div id="huntLinksOutput" class="hidden mt-3">
+                    <div id="huntLinksContent" class="space-y-2 text-sm"></div>
+                </div>
+            </div>
+
+            <!-- Tool 3: JD ATS Optimiser Loop -->
+            <div class="bg-white border border-black rounded p-4 md:col-span-2">
+                <h3 class="font-bold mb-1">ðŸ“Š Tool 3 â€” JD ATS Optimiser <span class="text-xs font-normal text-gray-500 ml-1">(iterative loop â†’ tailor â†’ score â†’ approve â†’ apply)</span></h3>
+                <p class="text-xs text-gray-600 mb-3">Paste a JD. AI scores your resume, tailors it, probes for improvements, iterates until you click Apply â€” then generates the final resume + cover letter.</p>
+
+                <!-- JD Input -->
+                <textarea id="huntJDInput" rows="4" class="w-full p-2 border border-black rounded bg-gray-50 text-xs mb-2" placeholder="Paste the full job description here..."></textarea>
+                <button onclick="Hunt.JDO.start()" class="w-full bg-green-400 hover:bg-green-500 border border-black font-bold py-2 rounded text-sm mb-2">ðŸš€ Start ATS Optimisation Loop â†’</button>
+                <div id="jdoLoading" class="loading text-xs mt-1 font-bold">AI is working...</div>
+
+                <!-- Score progress bar -->
+                <div id="jdoScoreBar" class="hidden mt-3 mb-2">
+                    <div class="flex justify-between text-xs font-bold mb-1">
+                        <span>ATS Score</span>
+                        <span id="jdoScoreLabel">â€”</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-3 border border-gray-400">
+                        <div id="jdoScoreFill" class="h-3 rounded-full transition-all duration-700" style="width:0%;background:#22c55e;"></div>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-500 mt-0.5">
+                        <span>Iteration <span id="jdoIterLabel">0</span></span>
+                        <span id="jdoScoreChange" class="font-bold text-green-700"></span>
+                    </div>
+                </div>
+
+                <!-- Chat stream (probe questions + AI messages) -->
+                <div id="jdoChatStream" class="hidden flex flex-col gap-3 mt-3 max-h-96 overflow-y-auto bg-gray-50 border border-gray-300 rounded p-3"></div>
+
+                <!-- User answer input (shown when AI has a probing question) -->
+                <div id="jdoAnswerRow" class="hidden mt-3 flex gap-2">
+                    <textarea id="jdoAnswerInput" rows="2" class="flex-1 p-2 border border-black rounded text-sm bg-white resize-none" placeholder="Answer the AI's question to improve your score..."></textarea>
+                    <button onclick="Hunt.JDO.submitAnswer()" class="bg-black text-white font-bold px-4 py-2 rounded text-sm hover:bg-gray-800 self-end">Send</button>
+                </div>
+
+                <!-- Current best resume panel (shown after first tailoring) -->
+                <div id="jdoResumePanel" class="hidden mt-4">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="font-bold text-sm">ðŸ“„ Current Tailored Resume</span>
+                        <div class="flex gap-2">
+                            <button onclick="Hunt.JDO.approveResume()" class="text-xs bg-green-200 hover:bg-green-300 border border-black px-2 py-1 rounded font-bold">âœ… Approve as Base & Continue</button>
+                            <button onclick="copyOutput('jdoResumeContent')" class="text-xs bg-gray-200 hover:bg-gray-300 border border-black px-2 py-1 rounded font-bold">ðŸ“‹ Copy</button>
+                        </div>
+                    </div>
+                    <div id="jdoResumeContent" class="p-3 bg-white border border-gray-300 rounded text-xs leading-relaxed whitespace-pre-wrap font-mono max-h-64 overflow-y-auto"></div>
+                </div>
+
+                <!-- APPLY button + final output -->
+                <div id="jdoApplyRow" class="hidden mt-4 flex gap-2">
+                    <button onclick="Hunt.JDO.apply()" class="flex-1 bg-black text-white font-bold py-3 rounded text-sm hover:bg-gray-800">âœ… I'm Satisfied â€” Generate Final Resume + Cover Letter</button>
+                </div>
+
+                <div id="jdoFinalOutput" class="hidden mt-4 space-y-4">
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-bold text-sm">ðŸ† Final Optimised Resume</span>
+                            <button onclick="copyOutput('jdoFinalResume')" class="text-xs bg-gray-200 hover:bg-gray-300 border border-black px-2 py-1 rounded font-bold">ðŸ“‹ Copy</button>
+                        </div>
+                        <div id="jdoFinalResume" class="p-3 bg-white border border-black rounded text-xs leading-relaxed whitespace-pre-wrap font-mono max-h-80 overflow-y-auto"></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-bold text-sm">âœ‰ï¸ Cover Letter</span>
+                            <button onclick="copyOutput('jdoCoverLetter')" class="text-xs bg-gray-200 hover:bg-gray-300 border border-black px-2 py-1 rounded font-bold">ðŸ“‹ Copy</button>
+                        </div>
+                        <div id="jdoCoverLetter" class="p-3 bg-white border border-black rounded text-xs leading-relaxed whitespace-pre-wrap max-h-80 overflow-y-auto"></div>
+                    </div>
+                    <button onclick="Hunt.JDO.reset()" class="w-full border border-black py-2 rounded text-sm font-bold hover:bg-gray-100">ðŸ” Start New JD Optimisation</button>
+                </div>
+            </div>
+
+            <!-- Tool 4: Target Company Hit List -->
+            <div class="bg-white border border-black rounded p-4">
+                <h3 class="font-bold mb-1">ðŸ¢ Tool 4 â€” Company Hit List</h3>
+                <p class="text-xs text-gray-600 mb-3">AI identifies the exact companies in your city and industry that actively hire for your profile â€” with their Naukri/LinkedIn search links.</p>
+                <button onclick="Hunt.generateHitList()" class="w-full bg-yellow-300 hover:bg-yellow-400 border border-black font-bold py-2 rounded text-sm">Generate Hit List â†’</button>
+                <div id="huntHitLoading" class="loading text-xs mt-1 font-bold">Researching companies...</div>
+                <div id="huntHitOutput" class="hidden mt-3">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="font-bold text-xs">Company Hit List</span>
+                        <button onclick="copyOutput('huntHitContent')" class="text-xs border border-black px-2 py-1 rounded bg-gray-200 hover:bg-gray-300 font-bold">ðŸ“‹</button>
+                    </div>
+                    <div id="huntHitContent" class="p-3 bg-gray-50 border border-gray-300 rounded text-sm leading-relaxed"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- â”€â”€ FULL STRATEGY REPORT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <div class="bg-white border border-black rounded p-4">
+            <h3 class="font-bold mb-1">ðŸ“‹ Full Strategy Report</h3>
+            <p class="text-xs text-gray-600 mb-3">Combines all of the above into one comprehensive Naukri + LinkedIn profile optimisation and outreach strategy document.</p>
+            <button onclick="Hunt.fullStrategy()" class="w-full bg-gray-700 hover:bg-gray-800 text-white border border-black font-bold py-2 rounded text-sm">Generate Full Strategy Report â†’</button>
+            <div id="huntLoading" class="loading text-xs mt-1 font-bold">Generating full strategy...</div>
+            <div id="huntOutput" class="hidden mt-3">
+                <div class="flex justify-between items-center mb-1">
+                    <span class="font-bold text-xs">Full Strategy Report</span>
+                    <button onclick="copyOutput('huntOutputContent')" class="text-xs border border-black px-2 py-1 rounded bg-gray-200 hover:bg-gray-300 font-bold">ðŸ“‹</button>
+                </div>
+                <div id="huntOutputContent" class="p-3 bg-gray-50 border border-gray-300 rounded text-sm leading-relaxed"></div>
+            </div>
+        </div>
+
+        <!-- â”€â”€ WHY NO LIVE SCRAPING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <div class="mt-4 bg-yellow-50 border border-yellow-400 rounded p-3 text-xs text-gray-700">
+            <strong>â„¹ï¸ Why are jobs not pulled live from Naukri/LinkedIn?</strong> Both platforms block API access from browser-based apps without OAuth approval and block CORS requests. This tool instead generates precision-crafted search URLs you click to open â€” you see the real live results directly on their platforms. The JD Match Scorer (Tool 3) lets you paste any JD you find and score it instantly.
         </div>
     </section>
 
     <!-- Tab 3: Resume Tailoring -->
     <section id="tailor" class="tab-content bg-gray-100 p-6 rounded shadow border border-black">
         <h2 class="text-2xl font-bold mb-1">Resume Tailoring & Optimization</h2>
-        <p class="mb-4 text-sm">AI rewrites your resume specifically for the job description — matching keywords, restructuring bullets, surfacing relevant achievements, and eliminating what doesn't fit.</p>
+        <p class="mb-4 text-sm">AI rewrites your resume specifically for the job description â€” matching keywords, restructuring bullets, surfacing relevant achievements, and eliminating what doesn't fit.</p>
 
         <div class="space-y-4">
             <div>
@@ -164,20 +278,20 @@
             </div>
             <div>
                 <label class="block font-bold mb-1">Target Job Description:</label>
-                <textarea id="tailorJob" rows="5" class="w-full p-2 border border-black rounded bg-gray-50" placeholder="Paste the full job description here..." oninput="localStorage.setItem('iv_tailor_jd',this.value)"></textarea>
+                <textarea id="tailorJob" rows="5" class="w-full p-2 border border-black rounded bg-gray-50" placeholder="Paste the full job description here..."></textarea>
             </div>
 
             <!-- Two paths: quick or deep -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div class="bg-yellow-50 border border-black rounded p-3">
-                    <p class="font-bold text-sm mb-1">⚡ Quick Tailor</p>
-                    <p class="text-xs mb-3">AI directly rewrites resume to the JD — no questions, instant output.</p>
-                    <button onclick="quickTailorResume()" class="w-full bg-yellow-300 hover:bg-yellow-400 border border-black font-bold py-2 rounded text-sm">Tailor Now →</button>
+                    <p class="font-bold text-sm mb-1">âš¡ Quick Tailor</p>
+                    <p class="text-xs mb-3">AI directly rewrites resume to the JD â€” no questions, instant output.</p>
+                    <button onclick="quickTailorResume()" class="w-full bg-yellow-300 hover:bg-yellow-400 border border-black font-bold py-2 rounded text-sm">Tailor Now â†’</button>
                 </div>
                 <div class="bg-orange-50 border border-black rounded p-3">
-                    <p class="font-bold text-sm mb-1">&#128300; Deep Tailor (2-Step)</p>
+                    <p class="font-bold text-sm mb-1">ðŸ”¬ Deep Tailor (2-Step)</p>
                     <p class="text-xs mb-3">AI identifies gaps, asks you questions to extract missing context, then rewrites.</p>
-                    <button onclick="analyzeResumeGaps()" class="w-full bg-orange-300 hover:bg-orange-400 border border-black font-bold py-2 rounded text-sm">Step 1: Analyze Gaps →</button>
+                    <button onclick="analyzeResumeGaps()" class="w-full bg-orange-300 hover:bg-orange-400 border border-black font-bold py-2 rounded text-sm">Step 1: Analyze Gaps â†’</button>
                 </div>
             </div>
 
@@ -186,11 +300,11 @@
 
         <!-- Deep Tailor: Follow-up Questions -->
         <div id="tailorQuestionsContainer" class="mt-5 p-4 bg-orange-100 border border-black rounded hidden">
-            <h3 class="font-bold mb-1">AI Gap Questions — answer to improve the output:</h3>
+            <h3 class="font-bold mb-1">AI Gap Questions â€” answer to improve the output:</h3>
             <p id="tailorAIQuestions" class="mb-3 text-sm whitespace-pre-wrap leading-relaxed"></p>
             <label class="block font-bold mb-1 text-sm">Your Answers:</label>
             <textarea id="tailorUserAnswers" rows="5" class="w-full p-2 border border-black rounded bg-gray-50 mb-3 text-sm" placeholder="Answer each question above. The more specific, the better the output..."></textarea>
-            <button onclick="generateFinalResume()" class="w-full bg-orange-400 hover:bg-orange-500 border border-black font-bold py-2 rounded text-sm">Step 2: Generate Deep-Tailored Resume →</button>
+            <button onclick="generateFinalResume()" class="w-full bg-orange-400 hover:bg-orange-500 border border-black font-bold py-2 rounded text-sm">Step 2: Generate Deep-Tailored Resume â†’</button>
             <div id="tailorFinalLoading" class="loading mt-2 font-bold text-sm">Rewriting resume... please wait.</div>
         </div>
 
@@ -198,36 +312,17 @@
         <div id="tailorFinalOutput" class="mt-5 hidden">
             <!-- Diff summary strip -->
             <div id="tailorDiffStrip" class="bg-green-50 border border-black rounded p-3 mb-3 text-sm hidden">
-                <span class="font-bold">&#128202; What changed: </span>
+                <span class="font-bold">ðŸ“Š What changed: </span>
                 <span id="tailorDiffText"></span>
             </div>
             <div class="flex justify-between items-center mb-1">
-                <span class="font-bold text-sm">&#10003; Tailored Resume</span>
-                <div class="flex gap-2 items-center">
-                    <span id="tailorSavedBadge" class="hidden text-xs font-bold px-3 py-1 rounded-full border" style="background:#dcfce7;color:#15803d;border-color:#16a34a;">&#10003; Saved</span>
-                    <button onclick="tailorRefineFurther()" class="text-xs border border-black px-2 py-1 rounded bg-yellow-200 hover:bg-yellow-300 font-bold">&#128257; Refine Further</button>
-                    <button onclick="copyOutput('tailorFinalOutputContent')" class="text-xs border border-black px-2 py-1 rounded bg-gray-300 hover:bg-gray-400 font-bold">&#128203; Copy</button>
+                <span class="font-bold text-sm">âœ… Tailored Resume</span>
+                <div class="flex gap-2">
+                    <button onclick="tailorRefineFurther()" class="text-xs border border-black px-2 py-1 rounded bg-yellow-200 hover:bg-yellow-300 font-bold">ðŸ” Refine Further</button>
+                    <button onclick="copyOutput('tailorFinalOutputContent')" class="text-xs border border-black px-2 py-1 rounded bg-gray-300 hover:bg-gray-400 font-bold">ðŸ“‹ Copy</button>
                 </div>
             </div>
             <div id="tailorFinalOutputContent" class="p-4 bg-white border border-black rounded font-normal text-sm leading-relaxed whitespace-pre-wrap"></div>
-        </div>
-
-        <!-- RAG AI Chat for Resume Tailor -->
-        <div id="tailorAIChat" class="mt-5 hidden">
-            <div class="bg-black text-white px-4 py-3 rounded-t font-bold text-sm flex items-center justify-between">
-                <span>&#9889; AI Resume Coach — Ask anything about your tailored resume</span>
-                <button onclick="TailorChat.clear()" class="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded font-bold">Clear</button>
-            </div>
-            <div id="tailorChat-messages" class="bg-gray-50 border-x border-black p-3 flex flex-col gap-2 overflow-y-auto" style="min-height:120px;max-height:280px;">
-                <div class="tmsg ai"><div class="tbubble ai">Your tailored resume is ready. Ask me anything — ATS score, missing keywords, how to strengthen a bullet, or how to answer interview questions based on it.</div></div>
-            </div>
-            <div id="tailorChat-typing" class="hidden px-3 py-1 text-xs text-gray-400 italic bg-gray-50 border-x border-black">AI is thinking...</div>
-            <div class="border border-black rounded-b p-2 flex gap-2 bg-white">
-                <input id="tailorChat-input" type="text" placeholder="e.g. Is this ATS ready? What keywords am I missing? How do I answer Q about X?"
-                    class="flex-1 p-2 border border-black rounded text-sm bg-gray-50 outline-none"
-                    onkeydown="if(event.key==='Enter')TailorChat.send()">
-                <button onclick="TailorChat.send()" class="bg-black text-white font-bold px-4 py-2 rounded text-sm hover:bg-gray-800">&#9658;</button>
-            </div>
         </div>
     </section>
 
@@ -256,7 +351,7 @@
         <div id="prepOutput" class="mt-6 hidden">
             <div class="flex justify-between items-center mb-1">
                 <span class="font-bold text-sm">Result</span>
-                <button onclick="copyOutput('prepOutputContent')" class="text-xs border border-black px-2 py-1 rounded bg-gray-300 hover:bg-gray-400 font-bold">&#128203; Copy</button>
+                <button onclick="copyOutput('prepOutputContent')" class="text-xs border border-black px-2 py-1 rounded bg-gray-300 hover:bg-gray-400 font-bold">ðŸ“‹ Copy</button>
             </div>
             <div id="prepOutputContent" class="p-4 bg-gray-200 border border-black rounded font-normal text-sm leading-relaxed"></div>
         </div>
@@ -275,7 +370,7 @@
             <div>
                 <label class="block font-bold mb-1">Your Answer:</label>
                 <div class="flex gap-2 mb-2">
-                    <button id="micBtn" onclick="toggleAudioRecording()" class="bg-red-300 hover:bg-red-400 border border-black font-bold py-2 px-4 rounded flex-1">&#127908; Start Audio Recording</button>
+                    <button id="micBtn" onclick="toggleAudioRecording()" class="bg-red-300 hover:bg-red-400 border border-black font-bold py-2 px-4 rounded flex-1">ðŸŽ¤ Start Audio Recording</button>
                 </div>
                 <div id="interimPreview" class="w-full p-2 border border-dashed border-gray-400 rounded bg-gray-50 text-gray-500 italic text-sm min-h-[2rem] hidden">Live preview will appear here...</div>
                 <textarea id="feedbackAnswer" rows="5" class="w-full p-2 border border-black rounded bg-gray-50 mt-2" placeholder="Type your answer here or use the microphone to speak..."></textarea>
@@ -287,7 +382,7 @@
         <div id="feedbackOutput" class="mt-6 hidden">
             <div class="flex justify-between items-center mb-1">
                 <span class="font-bold text-sm">Result</span>
-                <button onclick="copyOutput('feedbackOutputContent')" class="text-xs border border-black px-2 py-1 rounded bg-gray-300 hover:bg-gray-400 font-bold">&#128203; Copy</button>
+                <button onclick="copyOutput('feedbackOutputContent')" class="text-xs border border-black px-2 py-1 rounded bg-gray-300 hover:bg-gray-400 font-bold">ðŸ“‹ Copy</button>
             </div>
             <div id="feedbackOutputContent" class="p-4 bg-gray-200 border border-black rounded font-normal text-sm leading-relaxed"></div>
         </div>
@@ -303,11 +398,11 @@
                 <div class="flex items-center justify-between mb-1">
                     <label class="font-bold">Resume to Grill:</label>
                     <div class="flex gap-2">
-                        <button onclick="grillUseSource('master')" class="text-xs border border-black px-2 py-1 rounded bg-blue-100 hover:bg-blue-200 font-bold">&#128196; Use Master Resume</button>
-                        <button onclick="grillUseSource('tailor')" class="text-xs border border-black px-2 py-1 rounded bg-yellow-100 hover:bg-yellow-200 font-bold">&#9986; Use Tailor Resume</button>
+                        <button onclick="grillUseSource('master')" class="text-xs border border-black px-2 py-1 rounded bg-blue-100 hover:bg-blue-200 font-bold">ðŸ“„ Use Master Resume</button>
+                        <button onclick="grillUseSource('tailor')" class="text-xs border border-black px-2 py-1 rounded bg-yellow-100 hover:bg-yellow-200 font-bold">âœ‚ï¸ Use Tailor Resume</button>
                     </div>
                 </div>
-                <textarea id="grillingResume" rows="8" class="w-full p-2 border border-black rounded bg-gray-50" placeholder="Auto-filled from Master Resume or Tailor Resume — or paste manually..."></textarea>
+                <textarea id="grillingResume" rows="8" class="w-full p-2 border border-black rounded bg-gray-50" placeholder="Auto-filled from Master Resume or Tailor Resume â€” or paste manually..."></textarea>
             </div>
             <button onclick="grillResume()" class="w-full bg-red-300 hover:bg-red-400 border border-black font-bold py-3 rounded">Grill My Resume</button>
             <div id="grillingLoading" class="loading mt-2 font-bold">Scrutinizing resume with cascading models... please wait.</div>
@@ -316,24 +411,23 @@
         <div id="grillingOutput" class="mt-6 hidden">
             <div class="flex justify-between items-center mb-1">
                 <span class="font-bold text-sm">Result</span>
-                <button onclick="copyOutput('grillingOutputContent')" class="text-xs border border-black px-2 py-1 rounded bg-gray-300 hover:bg-gray-400 font-bold">&#128203; Copy</button>
+                <button onclick="copyOutput('grillingOutputContent')" class="text-xs border border-black px-2 py-1 rounded bg-gray-300 hover:bg-gray-400 font-bold">ðŸ“‹ Copy</button>
             </div>
             <div id="grillingOutputContent" class="p-4 bg-gray-200 border border-black rounded font-normal text-sm leading-relaxed"></div>
         </div>
     </section>    <!-- Interview Videos Tab -->
     <section id="videos" class="tab-content bg-gray-100 p-6 rounded shadow border border-black">
-        <h2 class="text-2xl font-bold mb-2">&#127909; Interview Videos</h2>
-        <p class="mb-2 text-sm font-bold">Curated YouTube playlists and channels for interview prep, HR rounds, resume tips, and salary negotiation.</p>
-        <p class="mb-4 text-xs" style="background:#1a1a1a;color:#f0e6d0;padding:8px 12px;border-radius:4px;">⚡ Tap <b>⚡ Analyse</b> on any video — AI will summarise the content, interview type, key lessons &amp; exact steps to apply. Use Thunder ⚡ to probe further.</p>
+        <h2 class="text-2xl font-bold mb-2">ðŸŽ¥ Interview Videos</h2>
+        <p class="mb-4 text-sm font-bold">Curated YouTube playlists and channels for interview prep, HR rounds, resume tips, and salary negotiation.</p>
         <div id="video-channels-iv"></div>
     </section>
 
     <!-- Player Overlay (shared) -->
     <div id="iv-player-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;display:none;flex-direction:column;">
         <div style="display:flex;align-items:center;padding:10px 14px;background:#2d2d2d;border-bottom:3px solid #000;gap:10px;flex-shrink:0;">
-            <button onclick="IVPlayer.close()" style="background:#000;border:none;color:#fff;padding:7px 14px;font-size:15px;font-weight:900;cursor:pointer;border-radius:3px;text-transform:uppercase;letter-spacing:.06em;flex-shrink:0;">✕ Close</button>
+            <button onclick="IVPlayer.close()" style="background:#000;border:none;color:#fff;padding:7px 14px;font-size:15px;font-weight:900;cursor:pointer;border-radius:3px;text-transform:uppercase;letter-spacing:.06em;flex-shrink:0;">âœ• Close</button>
             <span id="iv-p-title" style="font-size:15px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f0e6d0;font-weight:700;"></span>
-            <a id="iv-p-yt-link" href="#" target="_blank" rel="noopener noreferrer" style="background:#1a1a1a;border:1px solid #555;color:#f0e6d0;font-size:12px;padding:5px 9px;cursor:pointer;border-radius:3px;text-decoration:none;text-transform:uppercase;letter-spacing:.07em;flex-shrink:0;">↗ YouTube</a>
+            <a id="iv-p-yt-link" href="#" target="_blank" rel="noopener noreferrer" style="background:#1a1a1a;border:1px solid #555;color:#f0e6d0;font-size:12px;padding:5px 9px;cursor:pointer;border-radius:3px;text-decoration:none;text-transform:uppercase;letter-spacing:.07em;flex-shrink:0;">â†— YouTube</a>
         </div>
         <div style="position:relative;width:100%;padding-bottom:56.25%;background:#000;flex-shrink:0;">
             <iframe id="iv-player-iframe" style="position:absolute;inset:0;width:100%;height:100%;border:none;" allow="autoplay; fullscreen; encrypted-media" allowfullscreen></iframe>
@@ -346,16 +440,16 @@
 
     <!-- Daily AI Coach Tab -->
     <section id="coach" class="tab-content bg-gray-100 p-6 rounded shadow border border-black">
-        <h2 class="text-2xl font-bold mb-1">&#129504; Daily AI Coach</h2>
+        <h2 class="text-2xl font-bold mb-1">ðŸ§  Daily AI Coach</h2>
         <p class="mb-4 text-sm">Log what you worked on today. The AI will probe deeper, identify skill gaps, train you, and build your resume-ready skills list over time.</p>
 
         <!-- Skills Memory Panel -->
         <div class="bg-gray-200 border border-black rounded p-3 mb-4">
             <div class="flex items-center justify-between mb-2">
-                <span class="font-bold text-sm">&#128202; Skill Memory Bank</span>
+                <span class="font-bold text-sm">ðŸ“Š Skill Memory Bank</span>
                 <div class="flex gap-2">
-                    <button onclick="Coach.exportSkills()" class="text-xs border border-black px-2 py-1 rounded bg-gray-300 hover:bg-gray-400 font-bold">&#128203; Copy for Resume</button>
-                    <button onclick="Coach.clearSkills()" class="text-xs border border-black px-2 py-1 rounded bg-red-200 hover:bg-red-300 font-bold">&#128465; Clear All</button>
+                    <button onclick="Coach.exportSkills()" class="text-xs border border-black px-2 py-1 rounded bg-gray-300 hover:bg-gray-400 font-bold">ðŸ“‹ Copy for Resume</button>
+                    <button onclick="Coach.clearSkills()" class="text-xs border border-black px-2 py-1 rounded bg-red-200 hover:bg-red-300 font-bold">ðŸ—‘ Clear All</button>
                 </div>
             </div>
             <div id="coach-skills-list" class="flex flex-wrap gap-2 min-h-[2rem]">
@@ -370,7 +464,7 @@
                 <!-- Seeded welcome message -->
                 <div class="coach-msg ai">
                     <div class="inline-block bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-sm max-w-[85%]">
-                        <strong>AI Coach:</strong> Hello! I'm your Daily AI Coach. Tell me what you worked on or accomplished today — a task, a meeting, a problem you solved, a target you hit. Anything counts! I'll ask follow-up questions, spot your skill gaps, and help build your resume profile.
+                        <strong>AI Coach:</strong> Hello! I'm your Daily AI Coach. Tell me what you worked on or accomplished today â€” a task, a meeting, a problem you solved, a target you hit. Anything counts! I'll ask follow-up questions, spot your skill gaps, and help build your resume profile.
                     </div>
                 </div>
             </div>
@@ -397,11 +491,11 @@
                 <div class="flex flex-col md:flex-row gap-4 mb-3">
                     <div class="flex-1">
                         <label for="apiKey1" class="block font-bold mb-1">API Key 1:</label>
-                        <input type="password" id="apiKey1" class="w-full p-2 border border-black rounded bg-gray-50 font-mono text-sm" placeholder="Enter Gemini API Key 1..." autocomplete="off">
+                        <input type="text" id="apiKey1" class="w-full p-2 border border-black rounded bg-gray-50 font-mono text-sm" placeholder="Enter Gemini API Key 1...">
                     </div>
                     <div class="flex-1">
                         <label for="apiKey2" class="block font-bold mb-1">API Key 2:</label>
-                        <input type="password" id="apiKey2" class="w-full p-2 border border-black rounded bg-gray-50 font-mono text-sm" placeholder="Enter Gemini API Key 2..." autocomplete="off">
+                        <input type="text" id="apiKey2" class="w-full p-2 border border-black rounded bg-gray-50 font-mono text-sm" placeholder="Enter Gemini API Key 2...">
                     </div>
                 </div>
                 <button onclick="saveApiKeys()" class="bg-gray-400 hover:bg-gray-500 border border-black px-4 py-2 rounded font-bold w-full md:w-auto">Save & Store Keys Permanently</button>
@@ -427,18 +521,8 @@
             const savedKeys = JSON.parse(localStorage.getItem('gemini_api_keys') || '[]');
             _cachedKeys = savedKeys;
             _cachedKeyIndex = parseInt(localStorage.getItem('gemini_key_rotation_index') || '0', 10);
-            const k1el = document.getElementById('apiKey1');
-            const k2el = document.getElementById('apiKey2');
-            if (savedKeys[0] && k1el) {
-                k1el.value = savedKeys[0];
-                k1el.style.backgroundColor = '#dcfce7';
-                k1el.style.borderColor = '#16a34a';
-            }
-            if (savedKeys[1] && k2el) {
-                k2el.value = savedKeys[1];
-                k2el.style.backgroundColor = '#dcfce7';
-                k2el.style.borderColor = '#16a34a';
-            }
+            if (savedKeys[0]) document.getElementById('apiKey1').value = savedKeys[0];
+            if (savedKeys[1]) document.getElementById('apiKey2').value = savedKeys[1];
         });
 
         function saveApiKeys() {
@@ -457,24 +541,7 @@
                 localStorage.setItem('gemini_key_rotation_index', '0');
                 _cachedKeyIndex = 0;
             }
-
-            // Turn saved key inputs green
-            const k1el = document.getElementById('apiKey1');
-            const k2el = document.getElementById('apiKey2');
-            if (k1el && key1) { k1el.style.backgroundColor = '#dcfce7'; k1el.style.borderColor = '#16a34a'; }
-            if (k2el && key2) { k2el.style.backgroundColor = '#dcfce7'; k2el.style.borderColor = '#16a34a'; }
-
-            // Show confirmation
-            let status = document.getElementById('apiKeyStatus');
-            if (!status) {
-                status = document.createElement('p');
-                status.id = 'apiKeyStatus';
-                status.className = 'text-sm font-bold mt-2';
-                document.querySelector('#api-settings .bg-gray-200').appendChild(status);
-            }
-            status.style.color = '#15803d';
-            status.textContent = '&#10003; Keys saved successfully! AI features are now active.';
-            status.innerHTML = '&#10003; ' + keysArray.length + ' key' + (keysArray.length > 1 ? 's' : '') + ' saved successfully! AI features are now active.';
+            alert("Keys saved!");
         }
 
         // In-memory key cache for performance
@@ -589,32 +656,597 @@
         }
 
         // --- Job Hunt Strategy Feature (Optimized for LinkedIn & Naukri.com) ---
-        async function generateJobHuntStrategy() {
-            const resume = document.getElementById('huntResume').value;
-            const location = document.getElementById('huntLocation').value;
-            const availability = document.getElementById('huntAvailability').value;
-            
-            if (!resume || !location) return alert("Resume and Target Location are required.");
-            if (!warnIfTooLong(resume, location, availability)) return;
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // JOB HUNT MODULE â€” 4 tools + 1 full strategy report
+        // Shared system prompt used by all Hunt AI calls.
+        // Note: Live Naukri/LinkedIn scraping is impossible from a browser
+        // (CORS block + OAuth required). We generate precise search URLs
+        // that the user clicks to open real live results on those platforms.
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        const Hunt = (() => {
 
-            document.getElementById('huntLoading').classList.add('active');
-            document.getElementById('huntOutput').classList.add('hidden');
+            const HUNT_SYSTEM =
+                'You are an elite Indian job market strategist, ATS expert, and headhunter ' +
+                'with deep knowledge of Naukri.com and LinkedIn India. ' +
+                'You know exactly which keywords recruiters search for, how ATS systems rank candidates, ' +
+                'and which companies actively hire in specific Indian cities and industries. ' +
+                'Always be specific, actionable, and data-driven. No generic advice.';
 
-            try {
-                const sysInstruct = "You are an elite talent acquisition headhunter and India job market strategist expert in LinkedIn and Naukri.com directory systems.";
-                const prompt = `Analyze the following candidate profile to generate a comprehensive strategy optimized specifically for LinkedIn and Naukri.com.\n\n${safeWrap('resume', resume)}\n${safeWrap('target_location', location)}\n${safeWrap('availability', availability)}\n\nPlease generate a highly tactical report detailing:\n\n1. **Naukri.com Optimization Blueprint**:\n- **Target Functional Area & Keywords**: Exact high-traffic keywords to include in the Resume Headline and Key Skills sections to maximize recruiter views on Naukri.\n- **Custom Naukri Profile Headline**: Provide 2 variations of impactful headlines within the character limits.\n\n2. **LinkedIn Profile & Search Masterplan**:\n- **Boolean Search Strings**: Provide precise Boolean search queries (using AND, OR, NOT) that the user can copy/paste directly into LinkedIn Search to discover unadvertised jobs.\n- **Profile Tagline & About Summary Advice**: Tailor keyword placements to help them rank in LinkedIn Recruiter searches.\n\n3. **Target Corporate Hit List (${location})**:\n- List 5-10 major companies, startups, or multinationals operating directly in or around ${location} that actively hire for this candidate's profile via LinkedIn and Naukri.\n\n4. **Outreach Scripts**: Provide a short, high-conversion template for cold-messaging hiring managers or recruiters on LinkedIn.`;
-
-                const result = await callGemini(sysInstruct, prompt);
-                
-                if (result) {
-                    const outputDiv = document.getElementById('huntOutput');
-                    document.getElementById('huntOutputContent').innerHTML = '<p class="mt-3">' + renderMarkdown(result) + '</p>';
-                    outputDiv.classList.remove('hidden');
-                }
-            } finally {
-                hideLoading('huntLoading');
+            // â”€â”€ Shared input reader â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            function getInputs() {
+                return {
+                    resume:       (document.getElementById('huntResume').value || '').trim(),
+                    location:     (document.getElementById('huntLocation').value || '').trim(),
+                    industry:     (document.getElementById('huntIndustry').value || '').trim(),
+                    availability: (document.getElementById('huntAvailability').value || '').trim()
+                };
             }
-        }
+
+            function validate(inputs) {
+                if (!inputs.resume)   { alert('Please paste your resume in the Profile section above.'); return false; }
+                if (!inputs.location) { alert('Please enter your Target City.'); return false; }
+                if (!inputs.industry) { alert('Please enter your Target Industry / Role.'); return false; }
+                return true;
+            }
+
+            // â”€â”€ Tool 1: ATS Resume Scorer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            async function scoreATS() {
+                const inp = getInputs();
+                if (!validate(inp)) return;
+                if (!warnIfTooLong(inp.resume, inp.industry)) return;
+
+                document.getElementById('huntATSLoading').classList.add('active');
+                document.getElementById('huntATSOutput').classList.add('hidden');
+
+                try {
+                    const prompt =
+                        safeWrap('resume', inp.resume) + '\n\n' +
+                        safeWrap('target_role_and_industry', inp.industry) + '\n\n' +
+                        safeWrap('target_city', inp.location) + '\n\n' +
+                        `TASK: Perform a detailed ATS fitness audit for this candidate.
+
+Step 1 â€” ATS SCORE (0â€“100):
+Give an overall ATS score with a one-sentence verdict (e.g. "65/100 â€” Moderate match; significant keyword gaps in core technical skills").
+
+Step 2 â€” KEYWORD GAP ANALYSIS:
+List the top 10 keywords/phrases that recruiters and ATS systems searching for this role in ${inp.industry} would look for â€” and mark each one as:
+  âœ… Present (in resume)
+  âš ï¸ Weak (mentioned vaguely, needs stronger phrasing)
+  âŒ Missing (not in resume at all)
+
+Step 3 â€” CRITICAL FIXES (priority order):
+List exactly 5 specific rewrite actions the candidate must do to raise their ATS score by 20+ points. Each fix must be concrete â€” name the exact section, the exact keyword to add, and an example bullet.
+
+Step 4 â€” HEADLINE & SUMMARY:
+Write an optimised Naukri.com profile headline (under 250 chars) and a LinkedIn tagline (under 120 chars) that would maximise recruiter search visibility for this role in ${inp.industry}.`;
+
+                    const result = await callGemini(HUNT_SYSTEM, prompt);
+                    if (result) {
+                        document.getElementById('huntATSContent').innerHTML = '<p>' + renderMarkdown(result) + '</p>';
+                        document.getElementById('huntATSOutput').classList.remove('hidden');
+                    }
+                } finally {
+                    hideLoading('huntATSLoading');
+                }
+            }
+
+            // â”€â”€ Tool 2: Search Link Generator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            async function generateSearchLinks() {
+                const inp = getInputs();
+                if (!validate(inp)) return;
+                if (!warnIfTooLong(inp.resume, inp.industry)) return;
+
+                document.getElementById('huntLinksLoading').classList.add('active');
+                document.getElementById('huntLinksOutput').classList.add('hidden');
+
+                try {
+                    const prompt =
+                        safeWrap('resume', inp.resume) + '\n\n' +
+                        safeWrap('target_role_and_industry', inp.industry) + '\n\n' +
+                        safeWrap('target_city', inp.location) + '\n\n' +
+                        `TASK: Generate precision job search keywords for this candidate.
+
+Output ONLY a JSON object in this exact structure (no markdown, no fences):
+{
+  "primary_role_keywords": ["keyword1","keyword2","keyword3","keyword4","keyword5"],
+  "naukri_boolean": "EXACT boolean string for Naukri search box",
+  "linkedin_boolean": "EXACT boolean string for LinkedIn Jobs search box",
+  "naukri_functional_area": "exact Naukri functional area name to select in filters",
+  "naukri_industry": "exact Naukri industry filter name",
+  "experience_range": "X to Y years",
+  "alternate_titles": ["title1","title2","title3"]
+}
+
+Rules:
+- Boolean strings must use AND, OR, NOT with parentheses
+- Keywords must match what Indian recruiters actually search on these platforms
+- No explanation, ONLY the JSON object`;
+
+                    const raw = await callGemini(HUNT_SYSTEM, prompt);
+                    if (!raw) return;
+
+                    // Parse the JSON from the model response
+                    let data;
+                    try {
+                        const cleaned = raw.replace(/```json|```/g, '').trim();
+                        data = JSON.parse(cleaned);
+                    } catch(e) {
+                        document.getElementById('huntLinksContent').innerHTML =
+                            '<p class="text-red-600 text-xs">Could not parse keyword data. Try again.</p><pre class="text-xs mt-2 whitespace-pre-wrap">' + raw + '</pre>';
+                        document.getElementById('huntLinksOutput').classList.remove('hidden');
+                        return;
+                    }
+
+                    // Build Naukri URL
+                    const naukriKeyword = encodeURIComponent(data.primary_role_keywords.slice(0,3).join(' '));
+                    const naukriCity    = encodeURIComponent(inp.location);
+                    const naukriURL     = `https://www.naukri.com/${encodeURIComponent(data.primary_role_keywords[0].toLowerCase().replace(/\s+/g,'-'))}-jobs-in-${encodeURIComponent(inp.location.toLowerCase().replace(/\s+/g,'-'))}`;
+
+                    // Build LinkedIn URL
+                    const linkedinKeyword = encodeURIComponent(data.primary_role_keywords[0]);
+                    const linkedinLocation = encodeURIComponent(inp.location + ', India');
+                    const linkedinURL = `https://www.linkedin.com/jobs/search/?keywords=${linkedinKeyword}&location=${linkedinLocation}`;
+
+                    // Build output HTML
+                    const container = document.getElementById('huntLinksContent');
+                    container.innerHTML = `
+                        <div class="space-y-3">
+                            <div class="bg-indigo-50 border border-indigo-300 rounded p-3">
+                                <p class="font-bold text-xs mb-1">ðŸŽ¯ Primary Keywords</p>
+                                <div class="flex flex-wrap gap-1">${data.primary_role_keywords.map(k => '<span class="bg-indigo-200 text-indigo-900 text-xs px-2 py-0.5 rounded font-bold">' + k + '</span>').join('')}</div>
+                            </div>
+                            <div class="bg-blue-50 border border-blue-300 rounded p-3">
+                                <p class="font-bold text-xs mb-1">ðŸ”— Alternate Job Titles to Search</p>
+                                <div class="flex flex-wrap gap-1">${(data.alternate_titles||[]).map(t => '<span class="bg-blue-200 text-blue-900 text-xs px-2 py-0.5 rounded">' + t + '</span>').join('')}</div>
+                            </div>
+                            <div class="border border-black rounded p-3 space-y-2">
+                                <p class="font-bold text-xs">Naukri.com Boolean String (copy â†’ paste in Naukri search):</p>
+                                <code class="block bg-gray-100 p-2 text-xs rounded border select-all">${data.naukri_boolean || ''}</code>
+                                <p class="text-xs text-gray-500">Filters: Functional Area = <strong>${data.naukri_functional_area || inp.industry}</strong> | Industry = <strong>${data.naukri_industry || inp.industry}</strong> | Experience = <strong>${data.experience_range || 'as per profile'}</strong></p>
+                                <a href="${naukriURL}" target="_blank" rel="noopener noreferrer" class="inline-block bg-red-500 hover:bg-red-600 text-white font-bold text-xs px-4 py-2 rounded border border-red-700">ðŸ”´ Open Naukri Search â†’</a>
+                            </div>
+                            <div class="border border-black rounded p-3 space-y-2">
+                                <p class="font-bold text-xs">LinkedIn Boolean String (copy â†’ paste in LinkedIn Jobs):</p>
+                                <code class="block bg-gray-100 p-2 text-xs rounded border select-all">${data.linkedin_boolean || ''}</code>
+                                <a href="${linkedinURL}" target="_blank" rel="noopener noreferrer" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2 rounded border border-blue-800">ðŸ”µ Open LinkedIn Jobs â†’</a>
+                            </div>
+                        </div>`;
+                    document.getElementById('huntLinksOutput').classList.remove('hidden');
+
+                } finally {
+                    hideLoading('huntLinksLoading');
+                }
+            }
+
+            // â”€â”€ Tool 3: JD ATS Optimiser Loop (JDO) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            //
+            // STATE MACHINE:
+            //   idle â†’ scoring â†’ probing â†’ user_answering â†’ tailoring â†’ approved â†’ applying â†’ done
+            //
+            // Flow:
+            //   start()        â†’ score initial resume vs JD, tailor, probe for gaps
+            //   submitAnswer() â†’ user answers probe question â†’ AI re-tailors + re-scores
+            //   approveResume()â†’ user approves current tailored resume as new base
+            //   apply()        â†’ generate final resume + cover letter
+            //   reset()        â†’ clear all state, start fresh
+            //
+            const JDO = (() => {
+                // â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+                let state = {
+                    jd:           '',      // job description (fixed for this session)
+                    baseResume:   '',      // current approved base resume
+                    tailored:     '',      // latest AI-tailored version
+                    score:        0,       // latest ATS score (0-100)
+                    prevScore:    0,       // score before last iteration
+                    iteration:    0,       // how many tailoring loops run
+                    phase:        'idle',  // current phase
+                };
+
+                // â”€â”€ DOM helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+                const el  = id => document.getElementById(id);
+                const show = id => el(id).classList.remove('hidden');
+                const hide = id => el(id).classList.add('hidden');
+
+                function setLoading(on) {
+                    el('jdoLoading').classList.toggle('active', on);
+                }
+
+                /** Append a bubble to the chat stream */
+                function chat(role, html) {
+                    const stream = el('jdoChatStream');
+                    show('jdoChatStream');
+                    const row = document.createElement('div');
+                    row.style.cssText = 'display:flex;' + (role === 'user' ? 'justify-content:flex-end;' : '');
+                    const bubble = document.createElement('div');
+                    bubble.style.cssText = role === 'ai'
+                        ? 'background:#f3f4f6;border:1px solid #d1d5db;border-radius:12px 12px 12px 4px;padding:10px 14px;font-size:13px;max-width:90%;line-height:1.6;'
+                        : 'background:#1a1a1a;color:#f0e6d0;border-radius:12px 12px 4px 12px;padding:10px 14px;font-size:13px;max-width:80%;';
+                    bubble.innerHTML = html;
+                    row.appendChild(bubble);
+                    stream.appendChild(row);
+                    stream.scrollTop = stream.scrollHeight;
+                }
+
+                /** Update the score progress bar */
+                function updateScoreBar(score, iteration) {
+                    show('jdoScoreBar');
+                    el('jdoScoreLabel').textContent = score + '/100';
+                    el('jdoIterLabel').textContent   = iteration;
+                    const fill = el('jdoScoreFill');
+                    fill.style.width = score + '%';
+                    fill.style.background = score >= 80 ? '#22c55e' : score >= 60 ? '#f59e0b' : '#ef4444';
+                    const delta = score - state.prevScore;
+                    el('jdoScoreChange').textContent = iteration > 1 ? (delta >= 0 ? '+' + delta + ' pts' : delta + ' pts') : '';
+                    el('jdoScoreChange').style.color = delta >= 0 ? '#16a34a' : '#dc2626';
+                }
+
+                /** Show or hide the user answer input row */
+                function showAnswerRow(show_) {
+                    el('jdoAnswerRow').classList.toggle('hidden', !show_);
+                    if (show_) setTimeout(() => el('jdoAnswerInput').focus(), 80);
+                }
+
+                /** Show the current tailored resume panel */
+                function showResumePanel(text) {
+                    el('jdoResumeContent').textContent = text;
+                    show('jdoResumePanel');
+                    show('jdoApplyRow');
+                }
+
+                // â”€â”€ Prompts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+                /** Score a resume against the JD; returns {score, keywords, verdict} JSON */
+                async function scoreResume(resume) {
+                    const prompt =
+                        safeWrap('resume', resume) + '\n\n' +
+                        safeWrap('job_description', state.jd) + '\n\n' +
+                        `Return ONLY a JSON object, no markdown fences:
+{
+  "score": <integer 0-100>,
+  "shortlist_probability": <integer 0-100>,
+  "verdict": "<one sentence>",
+  "matched_keywords": ["kw1","kw2"],
+  "missing_keywords": ["kw1","kw2"],
+  "weak_keywords": ["kw1","kw2"],
+  "top_gaps": ["gap1","gap2","gap3"]
+}`;
+                    const raw = await callGemini(HUNT_SYSTEM, prompt);
+                    if (!raw) return null;
+                    try {
+                        return JSON.parse(raw.replace(/\`\`\`json|\`\`\`/g, '').trim());
+                    } catch(e) {
+                        // Try to extract JSON from a messy response
+                        const m = raw.match(/\{[\s\S]+\}/);
+                        if (m) try { return JSON.parse(m[0]); } catch(e2) {}
+                        return null;
+                    }
+                }
+
+                /** Tailor resume to JD using any extra user context provided */
+                async function tailorResume(extraContext) {
+                    const prompt =
+                        safeWrap('base_resume', state.baseResume) + '\n\n' +
+                        safeWrap('job_description', state.jd) + '\n\n' +
+                        (extraContext ? safeWrap('additional_candidate_context', extraContext) : '') + '\n\n' +
+                        `You are an ATS optimisation expert. Rewrite the resume to maximise ATS score for this JD.
+
+RULES (non-negotiable):
+1. Mirror the exact keywords, tools, and phrases from the JD in every relevant bullet
+2. Lead each role with the bullets that map directly to the JD requirements
+3. Rewrite the Summary to open with the JD job title and top 3 requirements
+4. Skills section must list every JD keyword the candidate has evidence for
+5. Use formula: [Action Verb] + [What] + [Tool/Method] + [Quantified Outcome]
+6. Remove or compress anything irrelevant to this JD
+7. Do NOT fabricate experience â€” use only what is in the base resume + additional context
+
+Output ONLY the complete rewritten resume. No commentary, no preamble.`;
+                    return await callGemini(HUNT_SYSTEM, prompt);
+                }
+
+                /** Generate a probing question to improve the weakest gap */
+                async function generateProbe(scoreData) {
+                    const gaps = (scoreData.top_gaps || []).join(', ');
+                    const missing = (scoreData.missing_keywords || []).slice(0,5).join(', ');
+                    const prompt =
+                        safeWrap('job_description', state.jd) + '\n\n' +
+                        safeWrap('current_resume', state.tailored) + '\n\n' +
+                        `The resume currently scores ${scoreData.score}/100. Key gaps: ${gaps}. Missing keywords: ${missing}.
+
+Write ONE targeted probing question to the candidate that would extract hidden experience to fill the most critical gap.
+- Ask HOW they used it, WHAT they built, WHAT the specific outcome was, and any numbers/metrics
+- Be surgical â€” not "do you have X experience?" but "Describe a specific project where you..."
+- The answer should let you add a new strong bullet that directly addresses the top missing keyword
+
+Return ONLY the question. No preamble.`;
+                    return await callGemini(HUNT_SYSTEM, prompt);
+                }
+
+                // â”€â”€ Public methods â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+                async function start() {
+                    const jd     = (el('huntJDInput').value || '').trim();
+                    const resume = (document.getElementById('huntResume').value || document.getElementById('masterResume').value || '').trim();
+
+                    if (!resume) { alert('Please paste your resume in the Profile section above (or fill the Master Resume tab).'); return; }
+                    if (!jd)     { alert('Please paste a job description first.'); return; }
+
+                    // Reset state
+                    state = { jd, baseResume: resume, tailored: '', score: 0, prevScore: 0, iteration: 0, phase: 'scoring' };
+
+                    // Clear UI
+                    el('jdoChatStream').innerHTML = '';
+                    hide('jdoResumePanel');
+                    hide('jdoApplyRow');
+                    hide('jdoFinalOutput');
+                    hide('jdoScoreBar');
+                    showAnswerRow(false);
+                    show('jdoChatStream');
+
+                    chat('ai', 'ðŸš€ <strong>Starting ATS Optimisation Loop</strong><br>Step 1: Scoring your original resume against the JD...');
+                    setLoading(true);
+
+                    try {
+                        // â”€â”€ Round 1: score original â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+                        const scoreData = await scoreResume(resume);
+                        if (!scoreData) { chat('ai', 'âŒ Could not parse score. Please try again.'); return; }
+
+                        state.score     = scoreData.score;
+                        state.iteration = 1;
+                        updateScoreBar(scoreData.score, 1);
+
+                        chat('ai',
+                            `<strong>Initial ATS Score: ${scoreData.score}/100</strong> â€” ${scoreData.verdict}<br><br>` +
+                            `âœ… Matched: <em>${(scoreData.matched_keywords||[]).join(', ') || 'none'}</em><br>` +
+                            `âš ï¸ Weak: <em>${(scoreData.weak_keywords||[]).join(', ') || 'none'}</em><br>` +
+                            `âŒ Missing: <em>${(scoreData.missing_keywords||[]).join(', ') || 'none'}</em><br><br>` +
+                            `Now tailoring your resume to fill these gaps...`
+                        );
+
+                        // â”€â”€ Round 1: first tailor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+                        const tailored1 = await tailorResume('');
+                        if (!tailored1) { chat('ai', 'âŒ Tailoring failed. Please try again.'); return; }
+                        state.tailored = tailored1;
+
+                        // â”€â”€ Round 1: re-score after tailor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+                        const scoreData2 = await scoreResume(tailored1);
+                        if (scoreData2) {
+                            state.prevScore = state.score;
+                            state.score     = scoreData2.score;
+                            state.iteration = 2;
+                            updateScoreBar(scoreData2.score, 2);
+                        }
+
+                        showResumePanel(tailored1);
+
+                        chat('ai',
+                            `âœ… <strong>First tailored resume ready.</strong> Score after tailoring: <strong>${state.score}/100</strong><br><br>` +
+                            `Review it below. You can:<br>` +
+                            `â€¢ <strong>Answer my question</strong> to give me more context and push the score higher<br>` +
+                            `â€¢ <strong>Approve as Base</strong> to lock this in and continue improving<br>` +
+                            `â€¢ <strong>Click Apply</strong> when you are satisfied to get the final resume + cover letter`
+                        );
+
+                        // â”€â”€ Generate probe question â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+                        if (scoreData2 && scoreData2.score < 92) {
+                            const probe = await generateProbe(scoreData2);
+                            if (probe) {
+                                state.phase = 'probing';
+                                chat('ai', 'ðŸ” <strong>To push your score higher, I need to know:</strong><br><br>' + probe.replace(/\n/g, '<br>'));
+                                showAnswerRow(true);
+                            }
+                        } else {
+                            chat('ai', 'ðŸŽ‰ Score is excellent! Click <strong>Apply</strong> to generate your final resume and cover letter.');
+                        }
+
+                    } finally {
+                        setLoading(false);
+                    }
+                }
+
+                async function submitAnswer() {
+                    const answer = (el('jdoAnswerInput').value || '').trim();
+                    if (!answer) return;
+                    el('jdoAnswerInput').value = '';
+                    showAnswerRow(false);
+
+                    chat('user', answer);
+                    chat('ai', 'ðŸ’¡ Got it. Re-tailoring with your additional context...');
+                    setLoading(true);
+
+                    try {
+                        // Tailor with new context
+                        const newTailored = await tailorResume(answer);
+                        if (!newTailored) { chat('ai', 'âŒ Tailoring failed. Please try again.'); return; }
+                        state.tailored = newTailored;
+
+                        // Re-score
+                        const scoreData = await scoreResume(newTailored);
+                        if (scoreData) {
+                            state.prevScore = state.score;
+                            state.score     = scoreData.score;
+                            state.iteration++;
+                            updateScoreBar(scoreData.score, state.iteration);
+
+                            showResumePanel(newTailored);
+
+                            const delta = state.score - state.prevScore;
+                            chat('ai',
+                                `ðŸ“ˆ <strong>Score updated: ${state.score}/100</strong> ${delta >= 0 ? '(+' + delta + ' pts improvement)' : '(' + delta + ' pts)' }<br><br>` +
+                                `âŒ Still missing: <em>${(scoreData.missing_keywords||[]).slice(0,4).join(', ') || 'none'}</em>`
+                            );
+
+                            // Probe again if room to improve
+                            if (state.score < 92 && state.iteration < 8) {
+                                const probe = await generateProbe(scoreData);
+                                if (probe) {
+                                    chat('ai', 'ðŸ” <strong>One more question to squeeze out more points:</strong><br><br>' + probe.replace(/\n/g, '<br>'));
+                                    showAnswerRow(true);
+                                }
+                            } else {
+                                chat('ai', state.score >= 92
+                                    ? 'ðŸŽ‰ Outstanding score! Click <strong>Apply</strong> whenever you are ready.'
+                                    : 'âœ… We have done ' + state.iteration + ' iterations. Click <strong>Apply</strong> to finalise, or keep answering questions.');
+                            }
+                        }
+                    } finally {
+                        setLoading(false);
+                    }
+                }
+
+                function approveResume() {
+                    state.baseResume = state.tailored;
+                    chat('ai', 'âœ… <strong>Resume approved and locked as your new base.</strong> Any further improvements will build on this version. Keep answering questions to push the score higher, or click Apply when ready.');
+                }
+
+                async function apply() {
+                    const finalResume = state.tailored || state.baseResume;
+                    hide('jdoApplyRow');
+                    chat('ai', 'ðŸ† Generating your <strong>final optimised resume</strong> and a tailored <strong>cover letter</strong>...');
+                    setLoading(true);
+
+                    try {
+                        // Final resume polish
+                        const polishedPrompt =
+                            safeWrap('resume', finalResume) + '\n\n' +
+                            safeWrap('job_description', state.jd) + '\n\n' +
+                            `Do a final polish pass on this already-tailored resume:
+1. Tighten the Summary to 3 punchy lines max
+2. Ensure every bullet starts with a unique strong action verb
+3. Verify every JD keyword appears at least once
+4. Remove any redundant lines
+5. Ensure clean consistent formatting
+
+Output ONLY the polished resume.`;
+
+                        const polished = await callGemini(HUNT_SYSTEM, polishedPrompt);
+
+                        // Cover letter
+                        const coverPrompt =
+                            safeWrap('final_resume', polished || finalResume) + '\n\n' +
+                            safeWrap('job_description', state.jd) + '\n\n' +
+                            `Write a compelling, personalised cover letter for this application.
+
+Structure:
+- Opening (2 lines): Hook â€” name the specific role and one compelling reason you are the right fit
+- Body para 1 (3 lines): Most relevant achievement from the resume that directly addresses the JD's top requirement. Include a number.
+- Body para 2 (3 lines): How your background in [industry/function] maps to what this company needs. Reference something specific from the JD.
+- Closing (2 lines): Confident call to action â€” request an interview, express enthusiasm without being sycophantic.
+
+Tone: Professional, direct, confident. No fluff. Max 250 words.
+Output ONLY the cover letter text.`;
+
+                        const coverLetter = await callGemini(HUNT_SYSTEM, coverPrompt);
+
+                        // Show final output
+                        el('jdoFinalResume').textContent   = (polished || finalResume).trim();
+                        el('jdoCoverLetter').textContent   = (coverLetter || '').trim();
+                        show('jdoFinalOutput');
+
+                        // Final score
+                        const finalScore = await scoreResume(polished || finalResume);
+                        if (finalScore) {
+                            state.prevScore = state.score;
+                            state.score     = finalScore.score;
+                            updateScoreBar(finalScore.score, state.iteration);
+                        }
+
+                        chat('ai',
+                            `ðŸŽ‰ <strong>Done!</strong> Final ATS Score: <strong>${state.score}/100</strong><br>` +
+                            `Your tailored resume and cover letter are ready below. Copy each one separately before applying.`
+                        );
+                        state.phase = 'done';
+
+                    } finally {
+                        setLoading(false);
+                    }
+                }
+
+                function reset() {
+                    state = { jd: '', baseResume: '', tailored: '', score: 0, prevScore: 0, iteration: 0, phase: 'idle' };
+                    el('jdoChatStream').innerHTML = '';
+                    el('jdoAnswerInput').value    = '';
+                    el('huntJDInput').value        = '';
+                    ['jdoScoreBar','jdoChatStream','jdoResumePanel','jdoApplyRow','jdoFinalOutput','jdoAnswerRow'].forEach(hide);
+                    el('jdoLoading').classList.remove('active');
+                }
+
+                return { start, submitAnswer, approveResume, apply, reset };
+            })();
+
+            // â”€â”€ Tool 4: Company Hit List â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            async function generateHitList() {
+                const inp = getInputs();
+                if (!validate(inp)) return;
+                if (!warnIfTooLong(inp.resume, inp.industry, inp.location)) return;
+
+                document.getElementById('huntHitLoading').classList.add('active');
+                document.getElementById('huntHitOutput').classList.add('hidden');
+
+                try {
+                    const prompt =
+                        safeWrap('resume_summary', inp.resume.slice(0, 1000)) + '\n\n' +
+                        safeWrap('target_role_and_industry', inp.industry) + '\n\n' +
+                        safeWrap('target_city', inp.location) + '\n\n' +
+                        `TASK: Generate a targeted hit list of 10â€“15 companies the candidate should apply to.
+
+For each company provide:
+- **Company Name** (type: MNC / Indian Corp / Startup / SME)
+- **Why they hire this profile**: 1-line reason specific to the candidate's background
+- **Hiring frequency**: High / Medium / Occasional on Naukri and LinkedIn
+- **Naukri search link**: https://www.naukri.com/company-name-jobs (use actual slug)
+- **LinkedIn company page search**: https://www.linkedin.com/company/company-name/jobs (use actual slug)
+- **Best way to approach**: Direct apply / Recruiter connect / Employee referral
+
+Group companies into: Tier 1 (best fit, apply first) | Tier 2 (good fit) | Tier 3 (stretch / aspirational)
+
+Focus ONLY on companies that actively hire in ${inp.location} for ${inp.industry} roles. Be specific â€” no generic advice.`;
+
+                    const result = await callGemini(HUNT_SYSTEM, prompt);
+                    if (result) {
+                        document.getElementById('huntHitContent').innerHTML = '<p>' + renderMarkdown(result) + '</p>';
+                        document.getElementById('huntHitOutput').classList.remove('hidden');
+                    }
+                } finally {
+                    hideLoading('huntHitLoading');
+                }
+            }
+
+            // â”€â”€ Full Strategy Report â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            async function fullStrategy() {
+                const inp = getInputs();
+                if (!validate(inp)) return;
+                if (!warnIfTooLong(inp.resume, inp.industry)) return;
+
+                document.getElementById('huntLoading').classList.add('active');
+                document.getElementById('huntOutput').classList.add('hidden');
+
+                try {
+                    const prompt =
+                        safeWrap('resume', inp.resume) + '\n\n' +
+                        safeWrap('target_role_and_industry', inp.industry) + '\n\n' +
+                        safeWrap('target_city', inp.location) + '\n\n' +
+                        safeWrap('availability', inp.availability) + '\n\n' +
+                        `Generate a complete job hunt strategy report with these sections:
+
+1. **Profile Positioning** â€” How to position this candidate for ${inp.industry} in ${inp.location}. Best job titles to target.
+2. **Naukri.com Optimisation** â€” Profile headline (2 options), Key Skills section keywords, functional area selection.
+3. **LinkedIn Optimisation** â€” Tagline, About section opening (3 lines), skills to add, connection strategy.
+4. **Boolean Search Strings** â€” 3 Naukri strings, 3 LinkedIn strings ready to copy-paste.
+5. **Outreach Templates** â€” One LinkedIn cold message to a recruiter, one to a hiring manager (under 300 chars each).
+6. **Weekly Action Plan** â€” A 7-day execution plan with daily tasks to run an organised job hunt.`;
+
+                    const result = await callGemini(HUNT_SYSTEM, prompt);
+                    if (result) {
+                        document.getElementById('huntOutputContent').innerHTML = '<p>' + renderMarkdown(result) + '</p>';
+                        document.getElementById('huntOutput').classList.remove('hidden');
+                    }
+                } finally {
+                    hideLoading('huntLoading');
+                }
+            }
+
+            return { scoreATS, generateSearchLinks, JDO, generateHitList, fullStrategy };
+        })();
 
         // --- 3. Interview Preparation Feature ---
         async function generatePrep() {
@@ -681,7 +1313,7 @@
         function warnIfTooLong(...values) {
             const total = values.reduce((sum, v) => sum + (v ? v.length : 0), 0);
             if (total > MAX_CHARS) {
-                return confirm(`⚠&#65039; Your combined input is very long (${total.toLocaleString()} characters). This may exceed the model's context limit and produce a truncated response. Continue anyway?`);
+                return confirm(`âš ï¸ Your combined input is very long (${total.toLocaleString()} characters). This may exceed the model's context limit and produce a truncated response. Continue anyway?`);
             }
             return true;
         }
@@ -697,71 +1329,23 @@
             return `<${label}>\n${value}\n</${label}>`;
         }
 
-        // --- Helper: show a "Saved ✓" badge briefly then keep it visible ---
-        function showSavedBadge(id) {
-            var el = document.getElementById(id);
-            if (!el) return;
-            el.classList.remove('hidden');
-            el.style.opacity = '1';
-            clearTimeout(el._fadeTimer);
-            // Keep visible — don't auto-hide, reassures user it's saved
-        }
-
-        // --- Master Resume Sync & Persist ---
+        // --- Master Resume Sync (Fix 14) ---
         document.addEventListener('DOMContentLoaded', () => {
             const masterResume = document.getElementById('masterResume');
             const linkedFields = ['huntResume', 'prepResume', 'tailorResume', 'grillingResume'];
-
-            // --- Persistent save: Master Resume ---
-            const savedMaster = localStorage.getItem('iv_master_resume');
-            if (savedMaster) {
-                masterResume.value = savedMaster;
-                showSavedBadge('masterSavedBadge');
-                linkedFields.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el && el.value === '') el.value = savedMaster;
-                });
-            }
             masterResume.addEventListener('input', () => {
-                localStorage.setItem('iv_master_resume', masterResume.value);
-                showSavedBadge('masterSavedBadge');
                 linkedFields.forEach(id => {
                     const el = document.getElementById(id);
                     if (el && el.value === '') el.value = masterResume.value;
                 });
             });
+            // Also sync on blur for reliability
             masterResume.addEventListener('blur', () => {
-                localStorage.setItem('iv_master_resume', masterResume.value);
-                showSavedBadge('masterSavedBadge');
                 linkedFields.forEach(id => {
                     const el = document.getElementById(id);
                     if (el && el.value === '') el.value = masterResume.value;
                 });
             });
-
-            // --- Persistent restore: Tailor outputs ---
-            const savedQuick = localStorage.getItem('iv_tailor_quick');
-            const savedDeep  = localStorage.getItem('iv_tailor_deep');
-            const savedJD    = localStorage.getItem('iv_tailor_jd');
-            const lastType   = localStorage.getItem('iv_tailor_last_type');
-
-            if (savedJD) document.getElementById('tailorJob') && (document.getElementById('tailorJob').value = savedJD);
-
-            if (lastType && (savedQuick || savedDeep)) {
-                const resumeText = lastType === 'deep' ? (savedDeep || savedQuick) : (savedQuick || savedDeep);
-                if (resumeText) {
-                    document.getElementById('tailorFinalOutputContent').innerText = resumeText;
-                    document.getElementById('tailorFinalOutput').classList.remove('hidden');
-                    const savedChanges = localStorage.getItem('iv_tailor_changes');
-                    if (savedChanges) {
-                        document.getElementById('tailorDiffText').textContent = savedChanges;
-                        document.getElementById('tailorDiffStrip').classList.remove('hidden');
-                    }
-                    // Restore chat context silently
-                    TailorChat.setContextSilent(resumeText, savedJD || '');
-                    showSavedBadge('tailorSavedBadge');
-                }
-            }
         });
 
         // --- Fix 3: Show interim speech transcript as live preview ---
@@ -818,7 +1402,7 @@
                 if (!recognition && !initAudio()) return;
                 recognition.start();
                 isRecording = true;
-                btn.innerText = "&#128721; Stop Recording";
+                btn.innerText = "ðŸ›‘ Stop Recording";
                 btn.classList.replace('bg-red-300', 'bg-red-500');
             } else {
                 stopAudioRecording();
@@ -829,7 +1413,7 @@
             if (recognition) recognition.stop();
             isRecording = false;
             const btn = document.getElementById('micBtn');
-            btn.innerText = "&#127908; Start Audio Recording";
+            btn.innerText = "ðŸŽ¤ Start Audio Recording";
             btn.classList.replace('bg-red-500', 'bg-red-300');
         }
 
@@ -859,20 +1443,20 @@
         }
 
         // --- 5. Resume Tailoring Feature ---
-        // ── TAILOR SYSTEM PROMPT (shared by all three tailor functions) ──────────
+        // â”€â”€ TAILOR SYSTEM PROMPT (shared by all three tailor functions) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         const TAILOR_SYSTEM = `You are a world-class resume writer and ATS optimization expert with 15+ years of experience placing candidates at top companies.
 
-CORE RULES — follow every one without exception:
+CORE RULES â€” follow every one without exception:
 1. REWRITE every bullet point using the exact terminology, keywords, and phrases from the job description. Do not preserve the candidate's original wording unless it already matches the JD.
 2. REORDER sections and bullets so the most JD-relevant experience appears first within each role.
-3. INJECT JD keywords naturally into the Summary/Objective, Skills, and each role — this is critical for ATS scoring.
-4. QUANTIFY every achievement with numbers, percentages, or scale wherever the candidate's input hints at it (e.g. "improved process" → "reduced processing time by 35%"). If no data is given, use credible relative language ("significantly", "consistently").
+3. INJECT JD keywords naturally into the Summary/Objective, Skills, and each role â€” this is critical for ATS scoring.
+4. QUANTIFY every achievement with numbers, percentages, or scale wherever the candidate's input hints at it (e.g. "improved process" â†’ "reduced processing time by 35%"). If no data is given, use credible relative language ("significantly", "consistently").
 5. REMOVE or condense experience that is irrelevant to the JD. Do not pad.
 6. MIRROR the seniority level and tone of the JD (startup casual vs enterprise formal).
-7. OUTPUT format: plain text, clean sections (Summary, Skills, Experience, Education, Certifications). Each role has: Company | Title | Date range, then 4–6 bullet points starting with strong action verbs.
-8. The output must read as if this candidate was born for this specific role — every line must serve the JD.`;
+7. OUTPUT format: plain text, clean sections (Summary, Skills, Experience, Education, Certifications). Each role has: Company | Title | Date range, then 4â€“6 bullet points starting with strong action verbs.
+8. The output must read as if this candidate was born for this specific role â€” every line must serve the JD.`;
 
-        // ── QUICK TAILOR: direct single-shot rewrite ─────────────────────────────
+        // â”€â”€ QUICK TAILOR: direct single-shot rewrite â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         async function quickTailorResume() {
             const resume = document.getElementById('tailorResume').value.trim();
             const job    = document.getElementById('tailorJob').value.trim();
@@ -891,20 +1475,20 @@ CORE RULES — follow every one without exception:
                     safeWrap('job_description', job) + '\n\n' +
                     `TASK: Produce a fully rewritten, ATS-optimised resume tailored SPECIFICALLY to the job description above.
 
-Step 1 — Extract from the JD:
-  • Required skills, tools, technologies, and qualifications
-  • Key responsibilities and deliverables
-  • Seniority level, team size context, and domain
+Step 1 â€” Extract from the JD:
+  â€¢ Required skills, tools, technologies, and qualifications
+  â€¢ Key responsibilities and deliverables
+  â€¢ Seniority level, team size context, and domain
 
-Step 2 — Rewrite the resume:
-  • Replace every generic bullet with a JD-matched version using the exact keywords extracted in Step 1
-  • Rewrite the Summary to open with the job title from the JD and the top 3 requirements
-  • Add a Skills section listing every JD keyword the candidate has evidence for
-  • For each role, lead with the bullets that map most directly to the JD requirements
-  • Use strong action verbs (Led, Built, Drove, Delivered, Reduced, Increased, Designed, Managed)
-  • Quantify wherever possible
+Step 2 â€” Rewrite the resume:
+  â€¢ Replace every generic bullet with a JD-matched version using the exact keywords extracted in Step 1
+  â€¢ Rewrite the Summary to open with the job title from the JD and the top 3 requirements
+  â€¢ Add a Skills section listing every JD keyword the candidate has evidence for
+  â€¢ For each role, lead with the bullets that map most directly to the JD requirements
+  â€¢ Use strong action verbs (Led, Built, Drove, Delivered, Reduced, Increased, Designed, Managed)
+  â€¢ Quantify wherever possible
 
-Step 3 — At the very end, add a one-line section called "CHANGES MADE:" listing the 3–5 biggest rewrites you made (e.g. "Rewrote summary to match Product Manager framing", "Added Agile/Scrum keywords throughout").
+Step 3 â€” At the very end, add a one-line section called "CHANGES MADE:" listing the 3â€“5 biggest rewrites you made (e.g. "Rewrote summary to match Product Manager framing", "Added Agile/Scrum keywords throughout").
 
 Output ONLY the complete tailored resume followed by the CHANGES MADE section. No commentary before it.`;
 
@@ -923,22 +1507,13 @@ Output ONLY the complete tailored resume followed by the CHANGES MADE section. N
                         document.getElementById('tailorDiffText').textContent = changesText;
                         document.getElementById('tailorDiffStrip').classList.remove('hidden');
                     }
-
-                    // Seed RAG chat with resume + JD context
-                    // Persist Quick Tailor output
-                    localStorage.setItem('iv_tailor_quick', resumeText);
-                    localStorage.setItem('iv_tailor_jd', job);
-                    localStorage.setItem('iv_tailor_last_type', 'quick');
-                    if (changesText) localStorage.setItem('iv_tailor_changes', changesText);
-                    showSavedBadge('tailorSavedBadge');
-                    TailorChat.setContext(resumeText, job);
                 }
             } finally {
                 hideLoading('tailorLoading');
             }
         }
 
-        // ── DEEP TAILOR STEP 1: gap analysis + clarifying questions ──────────────
+        // â”€â”€ DEEP TAILOR STEP 1: gap analysis + clarifying questions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         async function analyzeResumeGaps() {
             const resume = document.getElementById('tailorResume').value.trim();
             const job    = document.getElementById('tailorJob').value.trim();
@@ -956,15 +1531,15 @@ Output ONLY the complete tailored resume followed by the CHANGES MADE section. N
                     safeWrap('job_description', job) + '\n\n' +
                     `TASK: Perform a precision gap analysis between this resume and the job description.
 
-Step 1 — List every required skill, tool, qualification, and responsibility in the JD that is either:
+Step 1 â€” List every required skill, tool, qualification, and responsibility in the JD that is either:
   (a) Missing entirely from the resume, or
   (b) Present but too weakly worded to score in ATS
 
-Step 2 — For each gap, write ONE specific clarifying question to the candidate that could reveal hidden experience to fill it.
-  • Be surgical — ask about specific projects, tools, team sizes, outcomes, metrics
-  • Do NOT ask generic questions like "Do you have experience with X?" — ask HOW they used it, WHAT they built, WHAT the outcome was
+Step 2 â€” For each gap, write ONE specific clarifying question to the candidate that could reveal hidden experience to fill it.
+  â€¢ Be surgical â€” ask about specific projects, tools, team sizes, outcomes, metrics
+  â€¢ Do NOT ask generic questions like "Do you have experience with X?" â€” ask HOW they used it, WHAT they built, WHAT the outcome was
 
-Return ONLY the numbered questions. No preamble, no labels, no gap list — just the questions the candidate must answer.`;
+Return ONLY the numbered questions. No preamble, no labels, no gap list â€” just the questions the candidate must answer.`;
 
                 const result = await callGemini(TAILOR_SYSTEM, prompt);
 
@@ -977,7 +1552,7 @@ Return ONLY the numbered questions. No preamble, no labels, no gap list — just
             }
         }
 
-        // ── DEEP TAILOR STEP 2: final rewrite using gap answers ─────────────────
+        // â”€â”€ DEEP TAILOR STEP 2: final rewrite using gap answers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         async function generateFinalResume() {
             const resume      = document.getElementById('tailorResume').value.trim();
             const job         = document.getElementById('tailorJob').value.trim();
@@ -1000,12 +1575,12 @@ Return ONLY the numbered questions. No preamble, no labels, no gap list — just
                     `TASK: Produce the definitive tailored resume using ALL information above.
 
 Rules:
-1. Treat the candidate's answers as new raw experience data — weave every relevant detail into the appropriate role's bullets
-2. Every bullet must use exact language from the JD — no generic filler
+1. Treat the candidate's answers as new raw experience data â€” weave every relevant detail into the appropriate role's bullets
+2. Every bullet must use exact language from the JD â€” no generic filler
 3. Bullets must follow the formula: [Action Verb] + [What you did] + [Tool/Method] + [Quantified Outcome]
    Example: "Architected a microservices migration using Kubernetes, reducing deployment time by 60% and enabling 3x scale"
 4. The Summary must open: "[JD Job Title] with [X] years of experience in [top 3 JD themes]..."
-5. Skills section: list only skills evidenced by the resume OR the candidate's answers — no fabrication
+5. Skills section: list only skills evidenced by the resume OR the candidate's answers â€” no fabrication
 6. End with a "CHANGES MADE:" one-liner summary of the 3 biggest rewrites
 
 Output ONLY the complete tailored resume + CHANGES MADE. No commentary before it.`;
@@ -1024,22 +1599,13 @@ Output ONLY the complete tailored resume + CHANGES MADE. No commentary before it
                         document.getElementById('tailorDiffText').textContent = changesText;
                         document.getElementById('tailorDiffStrip').classList.remove('hidden');
                     }
-
-                    // Seed RAG chat with resume + JD context
-                    // Persist Deep Tailor output
-                    localStorage.setItem('iv_tailor_deep', resumeText);
-                    localStorage.setItem('iv_tailor_jd', job);
-                    localStorage.setItem('iv_tailor_last_type', 'deep');
-                    if (changesText) localStorage.setItem('iv_tailor_changes', changesText);
-                    showSavedBadge('tailorSavedBadge');
-                    TailorChat.setContext(resumeText, job);
                 }
             } finally {
                 hideLoading('tailorFinalLoading');
             }
         }
 
-        // ── REFINE FURTHER: iterative improvement on the last output ─────────────
+        // â”€â”€ REFINE FURTHER: iterative improvement on the last output â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         async function tailorRefineFurther() {
             const currentOutput = document.getElementById('tailorFinalOutputContent').innerText.trim();
             const job           = document.getElementById('tailorJob').value.trim();
@@ -1055,11 +1621,11 @@ Output ONLY the complete tailored resume + CHANGES MADE. No commentary before it
                     `TASK: You already tailored this resume once. Now push it further.
 
 Find and fix:
-1. Any bullet that still uses generic language instead of JD-specific terms — rewrite it
-2. Any JD keyword that appears in the description but not yet in the resume — insert it naturally
-3. Any bullet that lacks a quantified outcome — add one
-4. Any section ordering that does not lead with the most JD-relevant content — reorder it
-5. The Summary — tighten it to 3 punchy lines maximum
+1. Any bullet that still uses generic language instead of JD-specific terms â€” rewrite it
+2. Any JD keyword that appears in the description but not yet in the resume â€” insert it naturally
+3. Any bullet that lacks a quantified outcome â€” add one
+4. Any section ordering that does not lead with the most JD-relevant content â€” reorder it
+5. The Summary â€” tighten it to 3 punchy lines maximum
 
 Output the improved resume only. No commentary.`;
 
@@ -1104,7 +1670,7 @@ Output the improved resume only. No commentary.`;
             const grillingBox = document.getElementById('grillingResume');
             if (source === 'master') {
                 const val = document.getElementById('masterResume').value.trim();
-                if (!val) return alert('Master Resume is empty. Please fill it in the &#128196; Master Resume tab first.');
+                if (!val) return alert('Master Resume is empty. Please fill it in the ðŸ“„ Master Resume tab first.');
                 grillingBox.value = val;
             } else if (source === 'tailor') {
                 const val = document.getElementById('tailorResume').value.trim();
@@ -1222,7 +1788,7 @@ Output the improved resume only. No commentary.`;
                     '<div style="font-size:12px;color:#6b7280;margin-top:2px;">' + ch.desc + '</div>';
 
                 var arrow = document.createElement('span');
-                arrow.textContent = '▼';
+                arrow.textContent = 'â–¼';
                 arrow.style.cssText = 'color:#9ca3af;font-size:14px;transition:transform .25s;';
 
                 header.appendChild(badge);
@@ -1280,22 +1846,9 @@ Output the improved resume only. No commentary.`;
                         IVPlayer.open(v.vid, v.title, channelName);
                     });
 
-                    var analyzeBtn = document.createElement('button');
-                    analyzeBtn.className = 'btn-iv-analyze';
-                    analyzeBtn.textContent = '⚡ Analyse';
-                    analyzeBtn.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        IVAnalyze.run(v.vid, v.title, channelName, analyzeBtn, item);
-                    });
-
-                    var actions = document.createElement('div');
-                    actions.style.cssText = 'display:flex;flex-direction:column;gap:5px;align-items:center;flex-shrink:0;';
-                    actions.appendChild(btn);
-                    actions.appendChild(analyzeBtn);
-
                     item.appendChild(img);
                     item.appendChild(info);
-                    item.appendChild(actions);
+                    item.appendChild(btn);
                     item.addEventListener('click', function() { IVPlayer.open(v.vid, v.title, channelName); });
                     grid.appendChild(item);
                 });
@@ -1339,9 +1892,9 @@ Output the improved resume only. No commentary.`;
             return { open: open, close: close };
         })();
 
-        // ═══════════════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // Daily AI Coach Module
-        // ═══════════════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         var Coach = (function() {
 
             var STORAGE_KEY_SKILLS = 'coach_skills_v1';
@@ -1349,7 +1902,7 @@ Output the improved resume only. No commentary.`;
             var history = [];   // [{role:'user'|'model', parts:[{text}]}]
             var skills = [];    // [{name, context, date}]
 
-            // ── Persistent skill store ────────────────────────────────────
+            // â”€â”€ Persistent skill store â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             function loadSkills() {
                 try { skills = JSON.parse(localStorage.getItem(STORAGE_KEY_SKILLS) || '[]'); } catch(e) { skills = []; }
                 renderSkills();
@@ -1381,7 +1934,7 @@ Output the improved resume only. No commentary.`;
                 });
             }
 
-            // ── System prompt for the coach ───────────────────────────────
+            // â”€â”€ System prompt for the coach â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             function buildSystemPrompt() {
                 var existing = skills.map(function(s){ return s.name; }).join(', ') || 'none yet';
                 return (
@@ -1395,12 +1948,12 @@ Output the improved resume only. No commentary.`;
                     '5. RESUME ADVICE: Suggest 1-2 bullet points the user could add to their resume based on what they shared. Use action verbs and quantify where possible.\n' +
                     '6. NEXT STEP: End each response by recommending what to work on or log tomorrow.\n\n' +
                     'Already known skills (do not repeat): ' + existing + '\n' +
-                    'Keep responses focused, conversational, and encouraging. Do NOT dump everything at once — follow the stages naturally as the conversation develops. ' +
+                    'Keep responses focused, conversational, and encouraging. Do NOT dump everything at once â€” follow the stages naturally as the conversation develops. ' +
                     'If the user seems stuck, give them a specific prompt to reflect on.'
                 );
             }
 
-            // ── Gemini multi-turn call ────────────────────────────────────
+            // â”€â”€ Gemini multi-turn call â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             async function callCoach(userText) {
                 history.push({ role: 'user', parts: [{ text: userText }] });
 
@@ -1456,7 +2009,7 @@ Output the improved resume only. No commentary.`;
                 return displayText;
             }
 
-            // ── Chat UI helpers ───────────────────────────────────────────
+            // â”€â”€ Chat UI helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             function appendMessage(role, text) {
                 var msgs = document.getElementById('coach-messages');
                 var row = document.createElement('div');
@@ -1478,7 +2031,7 @@ Output the improved resume only. No commentary.`;
                 if (el) el.classList.toggle('hidden', !on);
             }
 
-            // ── Persist / restore conversation history ────────────────────
+            // â”€â”€ Persist / restore conversation history â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             function persistHistory() {
                 try { localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(history)); } catch(e) {}
             }
@@ -1499,7 +2052,7 @@ Output the improved resume only. No commentary.`;
                 } catch(e) {}
             }
 
-            // ── Public API ────────────────────────────────────────────────
+            // â”€â”€ Public API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             async function send() {
                 var input = document.getElementById('coach-input');
                 var text = (input.value || '').trim();
@@ -1526,7 +2079,7 @@ Output the improved resume only. No commentary.`;
 
             function exportSkills() {
                 if (skills.length === 0) return alert('No skills logged yet.');
-                var lines = skills.map(function(s){ return '• ' + s.name + (s.context ? ' — ' + s.context : ''); });
+                var lines = skills.map(function(s){ return 'â€¢ ' + s.name + (s.context ? ' â€” ' + s.context : ''); });
                 var text = 'SKILLS DETECTED BY AI COACH\n' + new Date().toLocaleDateString('en-IN') + '\n\n' + lines.join('\n');
                 navigator.clipboard.writeText(text).catch(function(){});
                 alert('Skills list copied to clipboard!');
@@ -1539,7 +2092,7 @@ Output the improved resume only. No commentary.`;
                 renderSkills();
             }
 
-            // ── Auto-send on Ctrl+Enter / Cmd+Enter ──────────────────────
+            // â”€â”€ Auto-send on Ctrl+Enter / Cmd+Enter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             window.addEventListener('load', function() {
                 var input = document.getElementById('coach-input');
                 if (input) {
@@ -1554,44 +2107,18 @@ Output the improved resume only. No commentary.`;
             return { send: send, newSession: newSession, exportSkills: exportSkills, clearSkills: clearSkills };
         })();
 
-        // ═══════════════════════════════════════════════════════════════════
-        // ⚡ Thunder – Global AI Quick-Ask Chat
-        // ═══════════════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // âš¡ Thunder â€“ Global AI Quick-Ask Chat
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         var Thunder = (function() {
             var isOpen = false;
             var tHistory = [];
-            var _videoCtx = '';
-            var _videoTitle = '';
 
-            var SYS_BASE = 'You are a concise, expert AI career coach and interview assistant. ' +
+            var SYS = 'You are a concise, expert AI career coach and interview assistant. ' +
                 'Answer questions about interviews, resumes, salary negotiation, job hunting, ' +
                 'LinkedIn, behavioural questions, and career growth. ' +
                 'Keep answers sharp and actionable under 200 words unless asked for more. ' +
                 'Use bullet points where helpful.';
-
-            function getSys() {
-                return _videoCtx
-                    ? SYS_BASE + '\n\nVideo context — "' + _videoTitle + '":\n' + _videoCtx
-                    : SYS_BASE;
-            }
-
-            function setVideoContext(title, ctx) {
-                _videoTitle = title;
-                _videoCtx = ctx;
-                tHistory = [];
-                var msgs = document.getElementById('thunder-messages');
-                if (msgs) {
-                    var row = document.createElement('div');
-                    row.className = 'tmsg ai';
-                    var b = document.createElement('div');
-                    b.className = 'tbubble ai';
-                    b.innerHTML = '&#128249; Video loaded: <b>' + title.replace(/</g,'&lt;') + '</b><br>Ask me anything about this interview topic!';
-                    row.appendChild(b);
-                    msgs.appendChild(row);
-                    msgs.scrollTop = msgs.scrollHeight;
-                }
-                if (!isOpen) toggle();
-            }
 
             function toggle() {
                 isOpen = !isOpen;
@@ -1638,7 +2165,7 @@ Output the improved resume only. No commentary.`;
                 }
 
                 var body = JSON.stringify({
-                    system_instruction: { parts: [{ text: getSys() }] },
+                    system_instruction: { parts: [{ text: SYS }] },
                     contents: tHistory,
                     generationConfig: { temperature: 0.4, maxOutputTokens: 600 }
                 });
@@ -1675,7 +2202,7 @@ Output the improved resume only. No commentary.`;
                 if (e.key === 'Escape' && isOpen) toggle();
             });
 
-            return { toggle: toggle, send: send, setVideoContext: setVideoContext };
+            return { toggle: toggle, send: send };
         })();
 
         (function(){
@@ -1688,236 +2215,8 @@ Output the improved resume only. No commentary.`;
                 '.tbubble.user{background:#1a1a1a;color:#f0e6d0;border-radius:14px 14px 4px 14px;}';
             document.head.appendChild(s);
         })();
-
-        // ═══════════════════════════════════════════════════════════════════
-        // &#9889; TAILOR CHAT — RAG chat grounded in tailored resume + JD
-        // ═══════════════════════════════════════════════════════════════════
-        var TailorChat = (function() {
-            var _resume = '';
-            var _jd = '';
-            var _history = [];
-
-            function setContext(resume, jd) {
-                _resume = resume;
-                _jd = jd;
-                _history = [];
-                document.getElementById('tailorAIChat').classList.remove('hidden');
-                var msgs = document.getElementById('tailorChat-messages');
-                msgs.innerHTML = '<div class="tmsg ai"><div class="tbubble ai">Your tailored resume is ready. Ask me anything — ATS score, missing keywords, how to strengthen a bullet, or how to answer interview questions based on it.</div></div>';
-            }
-
-            // Silent restore on page load — no panel reset, no scroll
-            function setContextSilent(resume, jd) {
-                _resume = resume;
-                _jd = jd;
-                _history = [];
-                document.getElementById('tailorAIChat').classList.remove('hidden');
-            }
-
-            function clear() {
-                _history = [];
-                var msgs = document.getElementById('tailorChat-messages');
-                msgs.innerHTML = '<div class="tmsg ai"><div class="tbubble ai">Chat cleared. Ask me anything about your resume or JD.</div></div>';
-            }
-
-            function appendMsg(role, text) {
-                var msgs = document.getElementById('tailorChat-messages');
-                var row = document.createElement('div');
-                row.className = 'tmsg ' + role;
-                var b = document.createElement('div');
-                b.className = 'tbubble ' + role;
-                b.innerHTML = role === 'ai' ? renderMarkdown(text) : text.replace(/&/g,'&amp;').replace(/</g,'&lt;');
-                row.appendChild(b);
-                msgs.appendChild(row);
-                msgs.scrollTop = msgs.scrollHeight;
-            }
-
-            // RAG: find most relevant section of resume for the query
-            function findRelevantChunk(query) {
-                if (!_resume) return '';
-                var paragraphs = _resume.split(/\n{2,}/);
-                var words = query.toLowerCase().split(/\W+/).filter(function(w){ return w.length > 3; });
-                if (!words.length) return _resume.substring(0, 800);
-                var best = paragraphs[0] || '', maxScore = -1;
-                paragraphs.forEach(function(p) {
-                    var score = 0, lc = p.toLowerCase();
-                    words.forEach(function(w){ if (lc.indexOf(w) !== -1) score++; });
-                    if (score > maxScore) { maxScore = score; best = p; }
-                });
-                return best;
-            }
-
-            async function send() {
-                var inp = document.getElementById('tailorChat-input');
-                var text = (inp.value || '').trim();
-                if (!text) return;
-                inp.value = '';
-
-                if (_cachedKeys.length === 0) {
-                    appendMsg('ai', 'Please save your Gemini API key in the API Settings tab first.');
-                    return;
-                }
-
-                appendMsg('user', text);
-                _history.push({ role: 'user', parts: [{ text: text }] });
-                document.getElementById('tailorChat-typing').classList.remove('hidden');
-
-                // RAG: find most relevant resume chunk for this query
-                var relevantChunk = findRelevantChunk(text);
-
-                var sysPrompt =
-                    'You are an expert ATS resume specialist and interview coach.\n' +
-                    'You have access to the candidate\'s tailored resume and the job description below.\n' +
-                    'Answer ONLY based on this context. Be specific, actionable, and concise (max 200 words).\n\n' +
-                    'JOB DESCRIPTION:\n' + _jd.substring(0, 1500) + '\n\n' +
-                    'RELEVANT RESUME SECTION:\n' + relevantChunk + '\n\n' +
-                    'FULL RESUME (for reference):\n' + _resume.substring(0, 3000);
-
-                var payload = {
-                    systemInstruction: { parts: [{ text: sysPrompt }] },
-                    contents: _history,
-                    generationConfig: { temperature: 0.3, maxOutputTokens: 600 }
-                };
-
-                var result = null;
-                for (var m = 0; m < MODEL_CASCADE.length && !result; m++) {
-                    var apiKey = getAvailableKey();
-                    if (!apiKey) break;
-                    try {
-                        var res = await fetch(API_BASE_URL + MODEL_CASCADE[m] + ':generateContent?key=' + apiKey,
-                            { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-                        if (res.ok) {
-                            var d = await res.json();
-                            var t = d.candidates && d.candidates[0] && d.candidates[0].content &&
-                                    d.candidates[0].content.parts && d.candidates[0].content.parts[0] &&
-                                    d.candidates[0].content.parts[0].text;
-                            if (t) result = t;
-                        } else if (res.status === 429 || res.status === 403) {
-                            markKeyExhausted(apiKey);
-                        }
-                    } catch(e) { console.warn('[TailorChat]', e.message); }
-                }
-
-                document.getElementById('tailorChat-typing').classList.add('hidden');
-
-                if (result) {
-                    _history.push({ role: 'model', parts: [{ text: result }] });
-                    appendMsg('ai', result);
-                } else {
-                    appendMsg('ai', 'All models failed. Check your API key in API Settings.');
-                }
-            }
-
-            return { setContext: setContext, setContextSilent: setContextSilent, send: send, clear: clear };
-        })();
-        var IVAnalyze = (function() {
-            function renderHtml(data) {
-                var type   = Array.isArray(data.interview_type)   ? data.interview_type   : [data.interview_type||''];
-                var skills = Array.isArray(data.skills_covered)   ? data.skills_covered   : [data.skills_covered||''];
-                var kp     = Array.isArray(data.key_points)       ? data.key_points       : [];
-                var tw     = Array.isArray(data.takeaways)        ? data.takeaways        : [];
-                var st     = Array.isArray(data.how_to_apply)     ? data.how_to_apply     : [];
-                var qa     = Array.isArray(data.sample_questions) ? data.sample_questions : [];
-                return '<strong>&#128203; Summary</strong><p>'+(data.summary||'')+'</p>'+
-                    '<strong>&#127919; Interview Type</strong><p>'+type.filter(Boolean).map(function(t){return '<span class="iv-tag">'+t+'</span>';}).join('')+'</p>'+
-                    '<strong>&#128736; Skills Covered</strong><p>'+skills.filter(Boolean).map(function(s){return '<span class="iv-tag">'+s+'</span>';}).join('')+'</p>'+
-                    '<strong>&#128273; Key Points</strong>'+kp.map(function(k){return '<p>• '+k+'</p>';}).join('')+
-                    '<strong>&#9989; Takeaways</strong>'+tw.map(function(t){return '<p>• '+t+'</p>';}).join('')+
-                    '<strong>&#128640; How to Apply in Your Next Interview</strong>'+st.map(function(s,i){return '<p>'+(i+1)+'. '+s+'</p>';}).join('')+
-                    (qa.length?'<strong>&#10067; Sample Questions from This Video</strong>'+qa.map(function(q){return '<p>• '+q+'</p>';}).join(''):'')+
-                    '<div style="margin-top:8px;padding-top:8px;border-top:1px solid #d1d5db;font-size:11px;color:#6b7280;">&#10003; Analysed via Gemini · Tap &#9889; Thunder to probe deeper.</div>';
-            }
-
-            async function run(vid, title, channelName, btn, item) {
-                if (_cachedKeys.length === 0) { alert('Save your Gemini API key in the API Settings tab first.'); return; }
-
-                // Toggle existing panel
-                var next = item.nextElementSibling;
-                if (next && next.classList.contains('iv-ai-panel')) { next.classList.toggle('open'); return; }
-
-                var panel = document.createElement('div');
-                panel.className = 'iv-ai-panel open';
-                panel.innerHTML =
-                    '<div class="iv-ai-panel-hdr"><span>&#9889; AI Analysis</span>'+
-                    '<button class="iv-ai-panel-close" onclick="this.closest(\'.iv-ai-panel\').classList.remove(\'open\')">&#10005;</button></div>'+
-                    '<div class="iv-ai-panel-body">&#10227; Sending video to Gemini…</div>';
-                item.insertAdjacentElement('afterend', panel);
-                btn.classList.add('loading'); btn.textContent = '&#10227; …';
-
-                var body = panel.querySelector('.iv-ai-panel-body');
-                var ytUrl = 'https://www.youtube.com/watch?v=' + vid;
-
-                // Same payload structure as Trading — proven to work
-                var payload = {
-                    contents: [{
-                        parts: [
-                            { fileData: { mimeType: 'video/*', fileUri: ytUrl } },
-                            { text:
-                                'You are an expert interview coach and HR specialist.\n'+
-                                'Watch this interview preparation video carefully and analyse its ACTUAL content.\n\n'+
-                                'Return a JSON object with these exact keys:\n'+
-                                '"summary": 2-3 sentences on what this video specifically teaches,\n'+
-                                '"interview_type": array (e.g. HR Round, Behavioural, Technical, Salary Negotiation, Resume Tips, Soft Skills),\n'+
-                                '"skills_covered": array of specific skills or frameworks taught (e.g. STAR Method, Body Language, ATS Optimisation),\n'+
-                                '"key_points": array of 5 specific insights from this video,\n'+
-                                '"takeaways": array of 4 actionable takeaways a candidate should immediately implement,\n'+
-                                '"how_to_apply": array of 5-6 exact steps to apply these lessons in a real interview,\n'+
-                                '"sample_questions": array of 3-4 actual interview questions discussed or demonstrated in this video.\n'+
-                                'Pure JSON only. No markdown. Base everything on actual video content.'
-                            }
-                        ]
-                    }],
-                    generationConfig: { temperature: 0.2, maxOutputTokens: 2048 }
-                };
-
-                // Cascade through models — same order as rest of app
-                var finalResult = null;
-                for (var m = 0; m < MODEL_CASCADE.length && !finalResult; m++) {
-                    var apiKey = getAvailableKey();
-                    if (!apiKey) break;
-                    try {
-                        var res = await fetch(
-                            API_BASE_URL + MODEL_CASCADE[m] + ':generateContent?key=' + apiKey,
-                            { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) }
-                        );
-                        var d = await res.json();
-                        if (res.ok) {
-                            var t = d.candidates && d.candidates[0] && d.candidates[0].content &&
-                                    d.candidates[0].content.parts && d.candidates[0].content.parts[0] &&
-                                    d.candidates[0].content.parts[0].text;
-                            if (t) finalResult = t;
-                        } else if (res.status === 429 || res.status === 403) {
-                            markKeyExhausted(apiKey);
-                        } else {
-                            console.warn('[IVAnalyze] '+MODEL_CASCADE[m]+' HTTP '+res.status, d.error && d.error.message);
-                        }
-                    } catch(e) { console.warn('[IVAnalyze]', e.message); }
-                }
-
-                btn.classList.remove('loading'); btn.textContent = '&#9889; Analyse';
-
-                if (!finalResult) {
-                    body.innerHTML = '<span style="color:#7a2020">&#9888; Analysis failed. Check API key in API Settings tab.</span>';
-                    return;
-                }
-
-                try {
-                    var clean = finalResult.replace(/```json|```/g,'').trim();
-                    var s2 = clean.indexOf('{'), e2 = clean.lastIndexOf('}');
-                    if (s2 !== -1 && e2 !== -1) clean = clean.substring(s2, e2+1);
-                    var parsed = JSON.parse(clean);
-                    body.innerHTML = renderHtml(parsed);
-                    Thunder.setVideoContext(title + ' (' + channelName + ')', clean);
-                } catch(err) {
-                    body.innerHTML = '<div style="white-space:pre-wrap;font-size:12px;">'+finalResult.replace(/</g,'&lt;')+'</div>';
-                    Thunder.setVideoContext(title, finalResult);
-                }
-            }
-
-            return { run: run };
-        })();
     </script>
-    <!-- ⚡ Floating Thunder AI Quick-Ask Button -->
+    <!-- âš¡ Floating Thunder AI Quick-Ask Button -->
     <button id="thunder-btn" onclick="Thunder.toggle()" title="Quick AI Assistant"
         style="position:fixed;bottom:24px;right:24px;z-index:8000;width:56px;height:56px;border-radius:50%;background:#1a1a1a;border:3px solid #f0e6d0;color:#f0e6d0;font-size:26px;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;transition:transform .2s,box-shadow .2s;"
         onmouseover="this.style.transform='scale(1.12)';this.style.boxShadow='0 6px 28px rgba(0,0,0,0.6)'"
